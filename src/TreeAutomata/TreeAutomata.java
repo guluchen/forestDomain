@@ -249,7 +249,7 @@ public class TreeAutomata{
     	return ret;
     }
     
-    public void removeSubTransition(Transition srcTran, 
+    public Transition removeSubTransition(Transition srcTran, 
     		int srcSubLabel) throws Exception{
 
     	ArrayList<Integer> from=new ArrayList<Integer>(srcTran.getRHS());
@@ -263,9 +263,10 @@ public class TreeAutomata{
 	
     	this.delTrans(srcTran);
     	this.addTrans(from,label,to);
+    	return new Transition(from,label,to);
     }
 
-    public void addSubTransition(Transition srcTran, 
+    public Transition addSubTransition(Transition srcTran, 
     		HashMap<Integer,Integer> tgtRank, Transition tgtTran) throws Exception{
 
     	for(int tgtSublabel:tgtTran.getLabel()){
@@ -287,6 +288,7 @@ public class TreeAutomata{
     	}
     	this.delTrans(srcTran);
     	this.addTrans(from,label,to);
+    	return new Transition(from,label,to);
     }
     
 

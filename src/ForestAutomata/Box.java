@@ -2,6 +2,8 @@ package ForestAutomata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+
 import Util.ManyToMany;
 
 public class Box extends ForestAutomata{
@@ -37,5 +39,12 @@ public class Box extends ForestAutomata{
 	    }		
 	}	
 	
+	HashSet<Integer> getBackPorts(){
+		HashSet<Integer> ret=new HashSet<Integer>();
+		for(int i=0;i<outPorts.size();i++)
+			if(portConnections.leftSetFromRightKey(outPorts.get(i)).contains(inPort))
+				ret.add(i);
+		return ret;
+	}
 	
 }
