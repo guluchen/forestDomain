@@ -58,28 +58,107 @@ public class ForestAutomata {
     
     //x = null
     public void assignNull(String x) throws Exception {
-    	pointers.remove(x);//This step should be done when assign a new value to a variable
     	if(noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
+    	pointers.put(x,0);
     }
 
-    //x->z = null TODO
-    public void assignNull(String x, int z) throws Exception {
-    	pointers.remove(x);//This step should be done when assign a new value to a variable
-    	if(noOtherReferenceTo(pointers.get(x), x)){
-    		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
+    //x->z = null
+    public HashSet<ForestAutomata> assignNull(String x, int z) throws Exception {
+    	TreeAutomata ta_x=this.getTreeAutomataWithRoot(pointers.get(x));
+    	if(ta_x==null){
+    		throw new Exception("Error: variable "+x+" == null\n");
     	}
+    	int tgtNode=pointers.get(x);
+		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+		for(ForestAutomata fa_:unfold(tgtNode)){
+			assert tgtNode==fa_.pointers.get(x);
+			for(ForestAutomata fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
+				assert tgtNode==fa.pointers.get(x);
+				TreeAutomata ta=fa.getTreeAutomataWithRoot(tgtNode);
+				assert ta.getTransTo(tgtNode).size()==1;
+				Transition tran=getFirst(ta.getTransTo(tgtNode));
+				ArrayList<Integer> LHS=tran.getLHS();
+				SortedList<Integer> label=tran.getLabel();
+				if(!label.contains(z)){
+					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
+				}else{
+					int z_ref=LHS.get(ta.getStartLoc(label, z));
+					int r=ta.referenceTo(z_ref);
+					if(r==-1){//r is not a root reference
+						ta.delTrans(tran);
+						int new_z_ref=TreeAutomata.getNewNodeNumber();
+						LHS.set(ta.getStartLoc(label, z), new_z_ref);
+						ta.addTrans(LHS, label, tgtNode);
+						
+						SortedList<Integer> nullRef=new SortedList<Integer>();
+						nullRef.add(0);
+						
+						ta.addTrans(new ArrayList<Integer>(),nullRef,new_z_ref);
+					}else{
+						for(String y:fa.pointers.keySet()){
+							if(fa.pointers.get(y)==r)
+								fa.pointers.put(y, 0);
+						}
+					}
+				}
+			}
+		}
+    	return ret;
     }
     
     // x = y
     public void assign(String x, String y) throws Exception {
-    	pointers.remove(x);//This step should be done when assign a new value to a variable
     	if(noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
 		pointers.put(x, pointers.get(y));
     }
+
+    //x->z = null TODO
+    public HashSet<ForestAutomata> assign(String x, int z, String y) throws Exception {
+    	TreeAutomata ta_x=this.getTreeAutomataWithRoot(pointers.get(x));
+    	if(ta_x==null){
+    		throw new Exception("Error: variable "+x+" == null\n");
+    	}
+    	int tgtNode=pointers.get(x);
+		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+		for(ForestAutomata fa_:unfold(tgtNode)){
+			assert tgtNode==fa_.pointers.get(x);
+			for(ForestAutomata fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
+				assert tgtNode==fa.pointers.get(x);
+				TreeAutomata ta=fa.getTreeAutomataWithRoot(tgtNode);
+				assert ta.getTransTo(tgtNode).size()==1;
+				Transition tran=getFirst(ta.getTransTo(tgtNode));
+				ArrayList<Integer> LHS=tran.getLHS();
+				SortedList<Integer> label=tran.getLabel();
+				if(!label.contains(z)){
+					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
+				}else{
+					int z_ref=LHS.get(ta.getStartLoc(label, z));
+					int r=ta.referenceTo(z_ref);
+					if(r==-1){//r is not a root reference
+						ta.delTrans(tran);
+						int new_z_ref=TreeAutomata.getNewNodeNumber();
+						LHS.set(ta.getStartLoc(label, z), new_z_ref);
+						ta.addTrans(LHS, label, tgtNode);
+						
+						SortedList<Integer> nullRef=new SortedList<Integer>();
+						nullRef.add(pointers.get(y));
+						
+						ta.addTrans(new ArrayList<Integer>(),nullRef,new_z_ref);
+					}else{
+						for(String x_:fa.pointers.keySet()){
+							if(fa.pointers.get(x_)==r)
+								fa.pointers.put(y, pointers.get(y));
+						}
+					}
+				}
+			}
+		}
+    	return ret;
+    }    
     
     // x = y->z
     public HashSet<ForestAutomata> assign(String x, String y, int z) throws Exception {// the type of y is ``label'' and z is a selector in ``label''
