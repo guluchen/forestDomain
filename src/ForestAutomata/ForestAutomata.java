@@ -64,6 +64,14 @@ public class ForestAutomata {
     	}
     }
 
+    //x->z = null TODO
+    public void assignNull(String x, int z) throws Exception {
+    	pointers.remove(x);//This step should be done when assign a new value to a variable
+    	if(noOtherReferenceTo(pointers.get(x), x)){
+    		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
+    	}
+    }
+    
     // x = y
     public void assign(String x, String y) throws Exception {
     	pointers.remove(x);//This step should be done when assign a new value to a variable
@@ -73,8 +81,8 @@ public class ForestAutomata {
 		pointers.put(x, pointers.get(y));
     }
     
-    // x = y->z TODO
-    public HashSet<ForestAutomata> assign(String x, String y, int sublabel) throws Exception {// the type of y is ``label'' and z is a selector in ``label''
+    // x = y->z
+    public HashSet<ForestAutomata> assign(String x, String y, int z) throws Exception {// the type of y is ``label'' and z is a selector in ``label''
     	pointers.remove(x);//This step should be done when assign a new value to a variable
     	if(noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
@@ -93,25 +101,40 @@ public class ForestAutomata {
 				ArrayList<Integer> LHS=tran.getLHS();
 				SortedList<Integer> label=tran.getLabel();
 				 
-				if(!label.contains(sublabel)){
-					throw new Exception("Error: "+y+" does not have the selector "+sublabel+"\n");
+				if(!label.contains(z)){
+					throw new Exception("Error: "+y+" does not have the selector "+z+"\n");
 				}else{
-					int new_x_ref=LHS.get(ta.getStartLoc(label, sublabel));
-					int r=ta.referenceTo(new_x_ref);
-					if(r==-1){
-						this.split(ta, tran);
+					int x_ref=LHS.get(ta.getStartLoc(label, z));
+					int r=ta.referenceTo(x_ref);
+					if(r==-1){//r is not a root reference
+						ta.delTrans(tran);
+						int new_x_ref=TreeAutomata.getNewNodeNumber();
+						LHS.set(ta.getStartLoc(label, z), new_x_ref);
+						ta.addTrans(LHS, label, tgtNode);
+
+						for(Transition tran_to_x:ta.getTransTo(x_ref)){
+							ArrayList<Integer> from_x=tran_to_x.getLHS();
+							SortedList<Integer> label_x=tran_to_x.getLabel();
+							ta.addTrans(new ArrayList<Integer>(from_x), new SortedList<Integer>(label_x), new_x_ref);
+						}
+						TreeAutomata ta_x=split(ta, new_x_ref);
+						pointers.put(x, ta_x.getFinal());
+						fa.addTreeAutomata(ta_x);
+						
+					}else{
+						pointers.put(x, r);
 					}
 				}
-				
 			}
 		}
-			
-			
-
-
-    	
     	return ret;
-    }    
+    }
+    
+    
+    
+    
+    
+    
 	//private functions for FA transformation
     private boolean isJoint(int j) throws Exception{
 		SortedList<Integer> label=new SortedList<Integer>();
@@ -175,7 +198,7 @@ public class ForestAutomata {
     	rootsToLift.add(tgtNode);
     	
 		for(Pair<TreeAutomata,Transition> ta_tran:getBackwardBoxTransWithRefOnLHS(tgtNode,this)){
-			TreeAutomata cta=split(ta_tran.getFirst(), ta_tran.getSecond());
+			TreeAutomata cta=split(ta_tran.getFirst(), ta_tran.getSecond().getRHS());
 			toAdd.add(cta);
 	    	rootsToLift.add(cta.getFinal());
 		}
@@ -261,9 +284,7 @@ public class ForestAutomata {
 		
 	}
 
-	private TreeAutomata split(TreeAutomata ta, Transition tran) throws Exception {
-    	assert ta.getTrans().contains(tran);
-    	int to=tran.getRHS();
+	private TreeAutomata split(TreeAutomata ta, int to) throws Exception {
     	
     	//ret is a copy of the current TA with all nodes renamed and with the only final state newSt.get(to) 
 		HashMap<Integer,Integer> newSt=new HashMap<Integer, Integer>();
@@ -273,31 +294,16 @@ public class ForestAutomata {
 		ret.setFinal(newSt.get(to));
 
 		//remove the transition and replace it with a reference
-    	ta.delTrans(tran);
-    	int splitPoint=TreeAutomata.getNewNodeNumber();
+		for(Transition tran:ta.getTransTo(to))
+			ta.delTrans(tran);
     	SortedList<Integer> portLabel=new SortedList<Integer>();
     	portLabel.add(-newSt.get(to));
     	ta.addSubLabel(-newSt.get(to), 0);
-    	ta.addTrans(new ArrayList<Integer>(), portLabel, splitPoint);
+    	ta.addTrans(new ArrayList<Integer>(), portLabel, to);
 		
-		//for all transitions with state "to" in the list of from states, add a copy that goes to "dupFrom"
-		for(Transition curTran: ta.getTrans()){
-    		ArrayList<Integer> curFrom=curTran.getLHS();
-    		SortedList<Integer> curLabel=curTran.getLabel();
-    		int curTo=tran.getRHS();
-    		if(curFrom.contains(to)){
-    			ArrayList<Integer> dupFrom=new ArrayList<Integer>(curFrom);
-    			SortedList<Integer> dupLabel=new SortedList<Integer>(curLabel);
-    			int dupTo=curTo;
-    			dupFrom.remove(new Integer(to));
-    			dupFrom.add(splitPoint);
-    	    	ta.addTrans(dupFrom, dupLabel, dupTo);
-    		}
-    	}
 		return ret;
 	}  
 
-	//should do it only for rules with backward box
 	private HashSet<ForestAutomata> finalRuleLHSToTA(ArrayList<Integer> rootsToLift, HashSet<ForestAutomata> sfa) throws Exception {
 		int tgtNode=rootsToLift.remove(0);
 		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
