@@ -27,7 +27,10 @@ public class ManyToMany<leftClass,rightClass> {
     	from=new HashMap<rightClass, HashSet<leftClass>>(c.from);
     }
     
-    
+    public void clear(){
+    	to.clear();
+    	from.clear();
+    }
     
     public void put(leftClass left, rightClass right){
     	if(to.get(left)==null)

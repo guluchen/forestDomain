@@ -11,22 +11,26 @@ import Util.Pair;
 import Util.SortedList;
 
 public class ForestAutomata {
-
+	final int NULL=1;
+	final int UNDEF=2;
+	
 	static HashMap<Integer, Box> boxes=new HashMap<Integer, Box>();
 	static public void addBox(Box b, int sublabel){
     	boxes.put(sublabel,b);
 	}
 	
-	private ArrayList<TreeAutomata> lt; 
+	private HashMap<String, ArrayList<String>> varType=new HashMap<String, ArrayList<String>>();
+	private ArrayList<TreeAutomata> lt;
+	private HashMap<String, Integer> symNum=new HashMap<String, Integer>();
 	private HashMap<String,Integer> pointers;
 
 	//constructors
-	ForestAutomata(){
+	public ForestAutomata(){
 		lt=new ArrayList<TreeAutomata>();
 	    pointers=new HashMap<String,Integer>();
 	}
 	
-	ForestAutomata(ForestAutomata c){
+	public ForestAutomata(ForestAutomata c){
 		lt=new ArrayList<TreeAutomata>();
 		for(TreeAutomata ta:c.lt)
 			lt.add(new TreeAutomata(ta));
@@ -44,33 +48,56 @@ public class ForestAutomata {
 	}	
 	
 	//program operations (transformers)
-    public void newNode(String x) throws Exception {//add a new tree automata to all forest automata
-    	pointers.remove(x);
-    	if(noOtherReferenceTo(pointers.get(x),x)){
+    public HashSet<ForestAutomata> newNode(String x, ArrayList<String> type) throws Exception {//add a new tree automata to all forest automata
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+    	if(pointers.get(x)!=null && noOtherReferenceTo(pointers.get(x),x)){
     		throw new Exception("Error: a memory leak detected on "+x+" = malloc()\n");
     	}
+    	varType.put(x, type);
+    	
     	TreeAutomata n=new TreeAutomata();
     	int newNodeNumber=TreeAutomata.getNewNodeNumber();
     	pointers.put(x, newNodeNumber);
     	n.setFinal(newNodeNumber);
     	addTreeAutomata(n);
+
+
+    	SortedList<Integer> label=new SortedList<Integer>();
+    	SortedList<Integer> label_to_undef=new SortedList<Integer>();
+    	label_to_undef.add(-UNDEF);
+    	ArrayList<Integer> refs_to_undef=new ArrayList<Integer>();
+    	for(String selector:type){
+    		if(symNum.get(selector)==null)
+    			symNum.put(selector, TreeAutomata.getNewSymNumber());
+    		n.addSubLabel(symNum.get(selector), 1);
+    		label.add(symNum.get(selector));
+    		refs_to_undef.add(TreeAutomata.getNewNodeNumber());
+    	}
+    	n.addTrans(refs_to_undef, label, newNodeNumber);
+    	for(int ref:refs_to_undef)
+        	n.addTrans(new ArrayList<Integer>(), label_to_undef, ref);
+    	ret.add(this);
+    	return ret;
     }
     
     //x = null
-    public void assignNull(String x) throws Exception {
-    	if(noOtherReferenceTo(pointers.get(x), x)){
+    public HashSet<ForestAutomata> assignNull(String x) throws Exception {
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+    	if(pointers.get(x)!=null &&noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
     	pointers.put(x,0);
+    	ret.add(this);
+    	return ret;
     }
 
     //x->z = null
-    public HashSet<ForestAutomata> assignNull(String x, int z) throws Exception {
-    	TreeAutomata ta_x=this.getTreeAutomataWithRoot(pointers.get(x));
+    public HashSet<ForestAutomata> assignNull(String x, String z) throws Exception {
+    	int tgtNode=pointers.get(x);
+    	TreeAutomata ta_x=this.getTreeAutomataWithRoot(tgtNode);
     	if(ta_x==null){
     		throw new Exception("Error: variable "+x+" == null\n");
     	}
-    	int tgtNode=pointers.get(x);
 		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
 		for(ForestAutomata fa_:unfold(tgtNode)){
 			assert tgtNode==fa_.pointers.get(x);
@@ -81,20 +108,19 @@ public class ForestAutomata {
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
 				ArrayList<Integer> LHS=tran.getLHS();
 				SortedList<Integer> label=tran.getLabel();
-				if(!label.contains(z)){
+				if(!label.contains(symNum.get(z))){
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
 				}else{
-					int z_ref=LHS.get(ta.getStartLoc(label, z));
+					int z_ref=LHS.get(ta.getStartLoc(label, symNum.get(z)));
 					int r=ta.referenceTo(z_ref);
 					if(r==-1){//r is not a root reference
 						ta.delTrans(tran);
 						int new_z_ref=TreeAutomata.getNewNodeNumber();
-						LHS.set(ta.getStartLoc(label, z), new_z_ref);
+						LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
 						ta.addTrans(LHS, label, tgtNode);
 						
 						SortedList<Integer> nullRef=new SortedList<Integer>();
-						nullRef.add(0);
-						
+						nullRef.add(-NULL);
 						ta.addTrans(new ArrayList<Integer>(),nullRef,new_z_ref);
 					}else{
 						for(String y:fa.pointers.keySet()){
@@ -103,20 +129,24 @@ public class ForestAutomata {
 						}
 					}
 				}
+				ret.add(fa);
 			}
 		}
     	return ret;
     }
     
     // x = y
-    public void assign(String x, String y) throws Exception {
-    	if(noOtherReferenceTo(pointers.get(x), x)){
+    public HashSet<ForestAutomata> assign(String x, String y) throws Exception {
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+    	if(pointers.get(x)!=null && noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
 		pointers.put(x, pointers.get(y));
+		ret.add(this);
+		return ret;
     }
 
-    //x->z = null TODO
+    //x->z = y
     public HashSet<ForestAutomata> assign(String x, int z, String y) throws Exception {
     	TreeAutomata ta_x=this.getTreeAutomataWithRoot(pointers.get(x));
     	if(ta_x==null){
@@ -163,7 +193,7 @@ public class ForestAutomata {
     // x = y->z
     public HashSet<ForestAutomata> assign(String x, String y, int z) throws Exception {// the type of y is ``label'' and z is a selector in ``label''
     	pointers.remove(x);//This step should be done when assign a new value to a variable
-    	if(noOtherReferenceTo(pointers.get(x), x)){
+    	if(pointers.get(x)!=null &&noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
     	
@@ -230,22 +260,25 @@ public class ForestAutomata {
     	
     }
     private boolean noOtherReferenceTo(int j, String curRef) throws Exception{
-		if(isJoint(j))//if j is a joint, then it is safe to remove x
-			return false;
-		boolean last_to_j=true;
-		for(String y:pointers.keySet()){
-				
-			if(pointers.get(y)==j && y.compareToIgnoreCase(curRef)!=0){
-			//these exists y!=x that also points to j, no memory leak occurs
-				last_to_j=false;
-				break;
-			}
-		}
-		if(last_to_j){
-			return true;
-		}
-			
     	return false;
+//TODO should also consider backward box
+//    	
+//    	if(j==0) return false; //special treatment for null
+//    	if(isJoint(j))//if j is a joint, then it is safe to remove x
+//			return false;
+//		boolean last_to_j=true;
+//		for(String y:pointers.keySet()){
+//				
+//			if(pointers.get(y)==j && y.compareToIgnoreCase(curRef)!=0){
+//			//these exists y!=x that also points to j, no memory leak occurs
+//				last_to_j=false;
+//				break;
+//			}
+//		}
+//		if(last_to_j){
+//			return true;
+//		}
+//    	return false;
     }	
     
     public HashSet<ForestAutomata> unfold(int tgtNode) throws Exception{
@@ -395,28 +428,29 @@ public class ForestAutomata {
     		assert finalTrans.size()==1;
     		Transition finalTran=getFirst(finalTrans);
     		
-    		ArrayList<Integer> from=finalTran.getLHS();
+    		ArrayList<Integer> lhs=finalTran.getLHS();
     		SortedList<Integer> label=finalTran.getLabel();
-    		int to=finalTran.getRHS();
+    		int rhs=finalTran.getRHS();
     		
     		srcTA.delTrans(finalTran);
-    		ArrayList<Integer> newfrom=new ArrayList<Integer>();
+    		ArrayList<Integer> newfrom=new ArrayList<Integer>(lhs);
     		//let n=from.size(), create TAs A1...An, create states q1'...qn' and add to newfrom
-    		for(int i=0;i<from.size();i++){
+    		for(int i=0;i<lhs.size();i++){
     			newfrom.add(i,TreeAutomata.getNewNodeNumber());
     			HashMap<Integer,Integer> stMapping=new HashMap<Integer,Integer>();
     			for(int s:srcTA.getStates()){
     				stMapping.put(s, TreeAutomata.getNewNodeNumber());
     			}
     			TreeAutomata Ai=new TreeAutomata(srcTA,stMapping);
-    			Ai.setFinal(stMapping.get(from.get(i)));
-    			addTreeAutomata(Ai);
+    			Ai.setFinal(stMapping.get(lhs.get(i)));
+    			fa.addTreeAutomata(Ai);
     			
     			SortedList<Integer> reflabel=new SortedList<Integer>();
     			reflabel.add(-Ai.getFinal());
+    			srcTA.addSubLabel(-Ai.getFinal(), 0);
         		srcTA.addTrans(new ArrayList<Integer>(), reflabel, newfrom.get(i));
     		}
-    		srcTA.addTrans(newfrom, label, to);
+    		srcTA.addTrans(newfrom, label, rhs);
     	}
 		if(rootsToLift.size()!=0)
 			return finalRuleLHSToTA(rootsToLift, ret);
@@ -436,7 +470,8 @@ public class ForestAutomata {
     	}
     	for(Transition tran:trans){
 			ForestAutomata fa=new ForestAutomata(srcFa);
-			fa.getTreeAutomataWithRoot(srcTA.getFinal()).addTrans(tran);
+			TreeAutomata ta=fa.getTreeAutomataWithRoot(srcTA.getFinal());
+			ta.addTrans(tran);
 			ret.add(fa);
 		}
     	return ret;       
@@ -449,8 +484,9 @@ public class ForestAutomata {
 			SortedList<Integer> label=finalTran.getLabel();
 			srcTA.addTrans(new ArrayList<Integer>(from), new SortedList<Integer>(label), newRoot);
 		}
-		srcTA.setFinal(newRoot);
-		srcTA.swapNamesOfStates(newRoot, srcTA.getFinal());
+		int oriRoot=srcTA.getFinal();
+		srcTA.swapNamesOfStates(newRoot, oriRoot);
+		srcTA.setFinal(oriRoot);
 	}
 
 	//state operations
