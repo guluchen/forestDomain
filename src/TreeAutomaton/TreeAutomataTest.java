@@ -1,4 +1,4 @@
-package TreeAutomata;
+package TreeAutomaton;
 
 import static org.junit.Assert.*;
 
@@ -11,11 +11,11 @@ import org.junit.Test;
 import Util.SortedList;
 
 public class TreeAutomataTest {
-	private TreeAutomata t;
+	private TreeAutomaton t;
 	@SuppressWarnings("serial")
 	@Before
 	public void setUp() throws Exception {
-		t=new TreeAutomata();
+		t=new TreeAutomaton();
     	
     	t.setFinal(1);
     	t.addSubLabel(1, 2);
