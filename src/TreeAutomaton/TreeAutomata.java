@@ -3,7 +3,7 @@
 
 
 
-package TreeAutomata;
+package TreeAutomaton;
 
 import java.util.ArrayList;
 import java.util.HashMap;

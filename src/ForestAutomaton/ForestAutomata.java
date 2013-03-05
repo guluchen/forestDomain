@@ -7,8 +7,8 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import TreeAutomata.Transition;
-import TreeAutomata.TreeAutomata;
+import TreeAutomaton.Transition;
+import TreeAutomaton.TreeAutomata;
 import Util.Pair;
 import Util.SortedList;
 

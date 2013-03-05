@@ -10,7 +10,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import TreeAutomata.TreeAutomata;
+import TreeAutomaton.TreeAutomata;
 import Util.SortedList;
 
 public class ForestAutomataTest {

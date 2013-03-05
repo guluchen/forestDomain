@@ -1,4 +1,4 @@
-package TreeAutomata;
+package TreeAutomaton;
 
 import static org.junit.Assert.*;
 
