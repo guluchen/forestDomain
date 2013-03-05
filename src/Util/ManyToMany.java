@@ -2,6 +2,7 @@ package Util;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class ManyToMany<leftClass,rightClass> {
@@ -24,7 +25,15 @@ public class ManyToMany<leftClass,rightClass> {
     }
     public ManyToMany(ManyToMany<leftClass, rightClass> c) {
     	to=new HashMap<leftClass, HashSet<rightClass>>(c.to);
+    	for(Entry<leftClass, HashSet<rightClass>> e:c.to.entrySet()){
+    		HashSet<rightClass> value=new HashSet<rightClass>(e.getValue());
+    		to.put(e.getKey(), value);
+    	}
     	from=new HashMap<rightClass, HashSet<leftClass>>(c.from);
+    	for(Entry<rightClass, HashSet<leftClass>> e:c.from.entrySet()){
+    		HashSet<leftClass> value=new HashSet<leftClass>(e.getValue());
+    		from.put(e.getKey(), value);
+    	}    	
     }
     
     public void clear(){

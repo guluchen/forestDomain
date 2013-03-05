@@ -4,11 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map.Entry;
+
+import ForestAutomata.ForestAutomata;
 import Util.ManyToMany;
 import Util.Pair;
 import Util.SortedList;
 
 public class TreeAutomata{
+
 
 	static private int freshNodeNum=3;//state 1,2 are reserved for the roots of the null and undef TAs, resp.
 	static private int freshSymNum=1;	
@@ -329,18 +333,26 @@ public class TreeAutomata{
 	static public int getNewSymNumber(){
 		return freshSymNum++;
 	}	
+
+
 	@Override
 	public String toString() {
+		HashMap<Integer,String> numSym=new HashMap<Integer,String>();
+		for(String sym:ForestAutomata.getSymbols()){
+			numSym.put(ForestAutomata.getSymbolMap(sym), sym);
+		}
+		
 		String ret="Ops ";
 		for(int i:rank.keySet()){
-			ret+=("a"+i+":"+rank.get(i)+" ");
+			if(i>0)
+			ret+=((numSym.get(i))+":"+rank.get(i)+" ");
 		}
 		ret+="\n\nAutomaton \nStates ";
 		for(int i:states){
-			ret+=("q"+i+" ");
+			ret+=(" "+i+" ");
 		}
 		ret+="\nFinal States ";
-		ret+=("q"+finalSt+" ");
+		ret+=(" "+finalSt+" ");
 
 		ret+="\nTransitions\n";
 		for(Transition tran: this.getTrans()){
@@ -356,12 +368,12 @@ public class TreeAutomata{
     			else if(sublabel<0)
     				label_prettyprint+=("REF "+(-sublabel)+" ");
     			else
-    				label_prettyprint+=(sublabel+" ");
+    				label_prettyprint+=(numSym.get(sublabel)+" ");
     		}
     		label_prettyprint+="]";
-			ret+=("("+from+") -"+ label_prettyprint +"-> q"+to+"\n");
+			ret+=("("+from+") -"+ label_prettyprint +"-> "+to+"\n");
 		}
-		return ret;
+		return ret;		
 	}
 	
 	//used in an assertion only, can be deleted in the final version

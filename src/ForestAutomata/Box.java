@@ -12,20 +12,30 @@ public class Box extends ForestAutomata{
 	ArrayList<Integer> outPorts;
 	ManyToMany<Integer, Integer> portConnections;
 
-	Box(){
+	
+	public void setInPort(int inPort){
+		this.inPort=inPort;
+	}
+	public void addOutPort(int outPort){
+		this.outPorts.add(outPort);
+	}
+	public void setPortConnections(int from, int to){
+		this.portConnections.put(from, to);
+	}
+	public Box(){
 		super();
 		outPorts =new ArrayList<Integer>();
 		portConnections=new ManyToMany<Integer, Integer>();
 	}
 
-	Box(Box c){
+	public Box(Box c){
 		super(c);
 		inPort=c.inPort;
 		outPorts =new ArrayList<Integer>(c.outPorts);
 		portConnections=new ManyToMany<Integer, Integer>(c.portConnections);
 	}
 
-	Box(Box c, HashMap<Integer,Integer> stMapping) throws Exception{
+	public Box(Box c, HashMap<Integer,Integer> stMapping) throws Exception{
 		super(c,stMapping);
 		inPort=stMapping.get(c.inPort);
 		outPorts =new ArrayList<Integer>();
