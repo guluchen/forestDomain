@@ -11,12 +11,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import ForestAutomaton.ForestAutomata;
+import ForestAutomaton.ForestAutomaton;
 import Util.ManyToMany;
 import Util.Pair;
 import Util.SortedList;
 
-public class TreeAutomata{
+public class TreeAutomaton{
 
 
 	static private int freshNodeNum=3;//state 1,2 are reserved for the roots of the null and undef TAs, resp.
@@ -26,21 +26,21 @@ public class TreeAutomata{
 	private int finalSt;
 	private HashSet<Integer> states=new HashSet<Integer>();
 	//Constructors
-	public TreeAutomata(){
+	public TreeAutomaton(){
 		rank=new HashMap<Integer,Integer>();
 		trans=new ManyToMany<ArrayList<Integer>, Integer>();	
 		states=new HashSet<Integer>();
 		addSubLabel(-1,0);//for ref to null
 		addSubLabel(-2,0);//for ref to undef
 	}
-	public TreeAutomata(TreeAutomata c){
+	public TreeAutomaton(TreeAutomaton c){
 		rank=new HashMap<Integer,Integer>(c.rank);
 		trans=new ManyToMany<ArrayList<Integer>, Integer>(c.trans);	
 		states=new HashSet<Integer>(c.states);
 		finalSt=c.finalSt;
 	}
 
-	public TreeAutomata(TreeAutomata c, HashMap<Integer, Integer> stMapping) throws Exception {
+	public TreeAutomaton(TreeAutomaton c, HashMap<Integer, Integer> stMapping) throws Exception {
 		stMapping.put(1, 1);//for the final of null
 		stMapping.put(2, 2);//for the final of undef
 		rank=new HashMap<Integer,Integer>(c.rank);
@@ -310,7 +310,7 @@ public class TreeAutomata{
 
 	//automata operations
 	//TODO shouldn't we check some more things before doing union? Like that the sets of states are disjoint?
-	public void union(TreeAutomata tgt){
+	public void union(TreeAutomaton tgt){
 		if(this.finalSt!=tgt.finalSt){
 			System.out.println("Only union between automata with the same root is allowed");
 			System.exit(0);
@@ -324,7 +324,7 @@ public class TreeAutomata{
 		int oriRoot=getFinal();
 		if(this.getTransFrom(oriRoot).size()==0)
 			return;
-		int newRoot=TreeAutomata.getNewNodeNumber();
+		int newRoot=TreeAutomaton.getNewNodeNumber();
 		//TODO getNewNodeNumber() -> getNewStateNumber()? Node should rather be state.
 
 		for(SortedList<Integer> label:this.getLabels())
@@ -348,8 +348,8 @@ public class TreeAutomata{
 	@Override
 	public String toString() {
 		HashMap<Integer,String> numSym=new HashMap<Integer,String>();
-		for(String sym:ForestAutomata.getSymbols()){
-			numSym.put(ForestAutomata.getSymbolMap(sym), sym);
+		for(String sym:ForestAutomaton.getSymbols()){
+			numSym.put(ForestAutomaton.getSymbolMap(sym), sym);
 		}
 
 		String ret="Ops ";
