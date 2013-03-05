@@ -1,4 +1,4 @@
-package ForestAutomata;
+package ForestAutomaton;
 
 import static org.junit.Assert.*;
 
