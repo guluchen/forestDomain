@@ -1,4 +1,4 @@
-package ForestAutomaton;
+package ForestAutomata;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,12 +7,12 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import TreeAutomaton.Transition;
-import TreeAutomaton.TreeAutomaton;
+import TreeAutomata.Transition;
+import TreeAutomata.TreeAutomata;
 import Util.Pair;
 import Util.SortedList;
 
-public class ForestAutomaton {
+public class ForestAutomata {
 	final static int NULL=1;
 	final static int UNDEF=2;
 	
@@ -20,20 +20,20 @@ public class ForestAutomaton {
 	static HashMap<Integer, Box> boxes=new HashMap<Integer, Box>();
 	static public void addBox(Box b, String selector){
 		if(symNum.get(selector)==null)
-			symNum.put(selector, TreeAutomaton.getNewSymNumber());
+			symNum.put(selector, TreeAutomata.getNewSymNumber());
     	boxes.put(symNum.get(selector),b);
 	}
 	
 	static HashMap<String, ArrayList<String>> varType=new HashMap<String, ArrayList<String>>();
 
-	ArrayList<TreeAutomaton> lt;
+	ArrayList<TreeAutomata> lt;
 	HashMap<String,Integer> pointers;
 	static public void setSymbolMap(String sym, int number){
 		symNum.put(sym, number);
 	}
 	static public int getSymbolMap(String sym){
 		if(symNum.get(sym)==null)
-			symNum.put(sym, TreeAutomaton.getNewSymNumber());
+			symNum.put(sym, TreeAutomata.getNewSymNumber());
 		return symNum.get(sym);
 	}
 	static public Set<String> getSymbols(){
@@ -41,22 +41,22 @@ public class ForestAutomaton {
 	}
 	
 	//constructors
-	public ForestAutomaton(){
-		lt=new ArrayList<TreeAutomaton>();
+	public ForestAutomata(){
+		lt=new ArrayList<TreeAutomata>();
 	    pointers=new HashMap<String,Integer>();
 	}
 	
-	public ForestAutomaton(ForestAutomaton c){
-		lt=new ArrayList<TreeAutomaton>();
-		for(TreeAutomaton ta:c.lt)
-			lt.add(new TreeAutomaton(ta));
+	public ForestAutomata(ForestAutomata c){
+		lt=new ArrayList<TreeAutomata>();
+		for(TreeAutomata ta:c.lt)
+			lt.add(new TreeAutomata(ta));
 	    pointers=new HashMap<String,Integer>(c.pointers);
 	}
 
-	ForestAutomaton(ForestAutomaton c, HashMap<Integer,Integer> stMapping) throws Exception{
-		lt=new ArrayList<TreeAutomaton>();
-		for(TreeAutomaton ta:c.lt)
-			lt.add(new TreeAutomaton(ta,stMapping));
+	ForestAutomata(ForestAutomata c, HashMap<Integer,Integer> stMapping) throws Exception{
+		lt=new ArrayList<TreeAutomata>();
+		for(TreeAutomata ta:c.lt)
+			lt.add(new TreeAutomata(ta,stMapping));
 	    pointers=new HashMap<String,Integer>();
 	    for(Entry<String, Integer> e:c.pointers.entrySet()){
 	    	pointers.put(e.getKey(), stMapping.get(e.getValue()));
@@ -66,15 +66,15 @@ public class ForestAutomaton {
 	
 	
 	//program operations (transformers)
-    public HashSet<ForestAutomaton> newNode(String x, ArrayList<String> type) throws Exception {//add a new tree automata to all forest automata
-    	HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
+    public HashSet<ForestAutomata> newNode(String x, ArrayList<String> type) throws Exception {//add a new tree automata to all forest automata
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
     	if(pointers.get(x)!=null && noOtherReferenceTo(pointers.get(x),x)){
     		throw new Exception("Error: a memory leak detected on "+x+" = malloc()\n");
     	}
     	varType.put(x, type);
     	
-    	TreeAutomaton n=new TreeAutomaton();
-    	int newNodeNumber=TreeAutomaton.getNewNodeNumber();
+    	TreeAutomata n=new TreeAutomata();
+    	int newNodeNumber=TreeAutomata.getNewNodeNumber();
     	pointers.put(x, newNodeNumber);
     	n.setFinal(newNodeNumber);
     	addTreeAutomata(n);
@@ -86,10 +86,10 @@ public class ForestAutomaton {
     	ArrayList<Integer> refs_to_undef=new ArrayList<Integer>();
     	for(String selector:type){
     		if(symNum.get(selector)==null)
-    			symNum.put(selector, TreeAutomaton.getNewSymNumber());
+    			symNum.put(selector, TreeAutomata.getNewSymNumber());
     		n.addSubLabel(symNum.get(selector), 1);
     		label.add(symNum.get(selector));
-    		refs_to_undef.add(TreeAutomaton.getNewNodeNumber());
+    		refs_to_undef.add(TreeAutomata.getNewNodeNumber());
     	}
     	n.addTrans(refs_to_undef, label, newNodeNumber);
     	for(int ref:refs_to_undef)
@@ -99,8 +99,8 @@ public class ForestAutomaton {
     }
     
     //x = null
-    public HashSet<ForestAutomaton> assignNull(String x) throws Exception {
-    	HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
+    public HashSet<ForestAutomata> assignNull(String x) throws Exception {
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
     	if(pointers.get(x)!=null &&noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
@@ -110,18 +110,18 @@ public class ForestAutomaton {
     }
 
     //x->z = null
-    public HashSet<ForestAutomaton> assignNull(String x, String z) throws Exception {
+    public HashSet<ForestAutomata> assignNull(String x, String z) throws Exception {
     	int tgtNode=pointers.get(x);
-    	TreeAutomaton ta_x=this.getTreeAutomataWithRoot(tgtNode);
+    	TreeAutomata ta_x=this.getTreeAutomataWithRoot(tgtNode);
     	if(ta_x==null){
     		throw new Exception("Error: variable "+x+" == null\n");
     	}
-		HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
-		for(ForestAutomaton fa_:unfold(tgtNode)){
+		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+		for(ForestAutomata fa_:unfold(tgtNode)){
 			assert tgtNode==fa_.pointers.get(x);
-			for(ForestAutomaton fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
+			for(ForestAutomata fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
 				assert tgtNode==fa.pointers.get(x);
-				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
+				TreeAutomata ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
 				ArrayList<Integer> LHS=tran.getLHS();
@@ -130,7 +130,7 @@ public class ForestAutomaton {
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
 				}else{
 					ta.delTrans(tran);
-					int new_z_ref=TreeAutomaton.getNewNodeNumber();
+					int new_z_ref=TreeAutomata.getNewNodeNumber();
 					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
 					ta.addTrans(LHS, label, tgtNode);
 					
@@ -145,8 +145,8 @@ public class ForestAutomaton {
     }
     
     // x = y
-    public HashSet<ForestAutomaton> assign(String x, String y) throws Exception {
-    	HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
+    public HashSet<ForestAutomata> assign(String x, String y) throws Exception {
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
     	if(pointers.get(x)!=null && noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
@@ -156,18 +156,18 @@ public class ForestAutomaton {
     }
 
     //x->z = y
-    public HashSet<ForestAutomaton> assignLeftPointer(String x, String z, String y) throws Exception {
-    	TreeAutomaton ta_x=this.getTreeAutomataWithRoot(pointers.get(x));
+    public HashSet<ForestAutomata> assignLeftPointer(String x, String z, String y) throws Exception {
+    	TreeAutomata ta_x=this.getTreeAutomataWithRoot(pointers.get(x));
     	if(ta_x==null){
     		throw new Exception("Error: variable "+x+" == null\n");
     	}
     	int tgtNode=pointers.get(x);
-		HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
-		for(ForestAutomaton fa_:unfold(tgtNode)){
+		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+		for(ForestAutomata fa_:unfold(tgtNode)){
 			assert tgtNode==fa_.pointers.get(x);
-			for(ForestAutomaton fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
+			for(ForestAutomata fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
 				assert tgtNode==fa.pointers.get(x);
-				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
+				TreeAutomata ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
 				ArrayList<Integer> LHS=tran.getLHS();
@@ -176,7 +176,7 @@ public class ForestAutomaton {
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
 				}else{
 					ta.delTrans(tran);
-					int new_z_ref=TreeAutomaton.getNewNodeNumber();
+					int new_z_ref=TreeAutomata.getNewNodeNumber();
 					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
 					ta.addTrans(LHS, label, tgtNode);
 					
@@ -192,19 +192,19 @@ public class ForestAutomaton {
     }    
     
     // x = y->z
-    public HashSet<ForestAutomaton> assignRightPointer(String x, String y, String z) throws Exception {// the type of y is ``label'' and z is a selector in ``label''
+    public HashSet<ForestAutomata> assignRightPointer(String x, String y, String z) throws Exception {// the type of y is ``label'' and z is a selector in ``label''
     	if(pointers.get(x)!=null &&noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
     	
 		int tgtNode=pointers.get(y);
-		HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
+		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
 		
-		for(ForestAutomaton fa_:unfold(tgtNode)){
+		for(ForestAutomata fa_:unfold(tgtNode)){
 			assert tgtNode==fa_.pointers.get(y);
-			for(ForestAutomaton fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
+			for(ForestAutomata fa:onlyOneFinalRule(fa_,fa_.getTreeAutomataWithRoot(tgtNode))){
 				assert tgtNode==fa_.pointers.get(y);
-				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
+				TreeAutomata ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
 				ArrayList<Integer> LHS=tran.getLHS();
@@ -217,7 +217,7 @@ public class ForestAutomaton {
 					int r=ta.referenceTo(x_ref);
 					if(r==-1){//r is not a root reference
 						ta.delTrans(tran);
-						int new_x_ref=TreeAutomaton.getNewNodeNumber();
+						int new_x_ref=TreeAutomata.getNewNodeNumber();
 						LHS.set(ta.getStartLoc(label, symNum.get(z)), new_x_ref);
 						ta.addTrans(LHS, label, tgtNode);
 
@@ -226,7 +226,7 @@ public class ForestAutomaton {
 							SortedList<Integer> label_x=tran_to_x.getLabel();
 							ta.addTrans(new ArrayList<Integer>(from_x), new SortedList<Integer>(label_x), new_x_ref);
 						}
-						TreeAutomaton ta_x=split(ta, new_x_ref);
+						TreeAutomata ta_x=split(ta, new_x_ref);
 						fa.pointers.put(x, ta_x.getFinal());
 						fa.addTreeAutomata(ta_x);
 						
@@ -250,7 +250,7 @@ public class ForestAutomaton {
 		SortedList<Integer> label=new SortedList<Integer>();
 		label.add(-j);
 		int referenceCnt=0;
-    	for(TreeAutomaton ta:lt){
+    	for(TreeAutomata ta:lt){
     		if(ta.getTo(new ArrayList<Integer>(), label).size()!=0){
     			referenceCnt++;
     			if(referenceCnt>=2)
@@ -282,16 +282,16 @@ public class ForestAutomaton {
 //    	return false;
     }	
     
-    public HashSet<ForestAutomaton> unfold(int tgtNode) throws Exception{
-    	HashSet<ForestAutomaton> ret=unfoldPreprocess(tgtNode);
+    public HashSet<ForestAutomata> unfold(int tgtNode) throws Exception{
+    	HashSet<ForestAutomata> ret=unfoldPreprocess(tgtNode);
     	//open boxes
-    	for(ForestAutomaton fa:ret){
+    	for(ForestAutomata fa:ret){
     		//backward
-			for(Pair<TreeAutomaton,Transition> ta_tran: getBackwardBoxTransWithRefOnLHS(tgtNode,fa)){
+			for(Pair<TreeAutomata,Transition> ta_tran: getBackwardBoxTransWithRefOnLHS(tgtNode,fa)){
 				openBox(fa, ta_tran.getFirst(), ta_tran.getSecond());
 			}
     		//forward
-			TreeAutomaton tgtTA=fa.getTreeAutomataWithRoot(tgtNode);
+			TreeAutomata tgtTA=fa.getTreeAutomataWithRoot(tgtNode);
 			for(Transition tran: tgtTA.getTransTo(tgtNode)){
 				openBox(fa, tgtTA, tran);
 			}
@@ -301,18 +301,18 @@ public class ForestAutomaton {
     }
 
     //private functions for folding
-    private HashSet<ForestAutomaton> unfoldPreprocess(int tgtNode) throws Exception{
-    	HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
+    private HashSet<ForestAutomata> unfoldPreprocess(int tgtNode) throws Exception{
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
     	ret.add(this);
     	
     	//split the TA with box reference to tgtNode
-    	ArrayList<TreeAutomaton> toAdd=new ArrayList<TreeAutomaton>();
+    	ArrayList<TreeAutomata> toAdd=new ArrayList<TreeAutomata>();
     	ArrayList<Integer> rootsToLift=new ArrayList<Integer>();
     	rootsToLift.add(tgtNode);
     	
-		for(Pair<TreeAutomaton,Transition> ta_tran:getBackwardBoxTransWithRefOnLHS(tgtNode,this)){
+		for(Pair<TreeAutomata,Transition> ta_tran:getBackwardBoxTransWithRefOnLHS(tgtNode,this)){
 			
-			TreeAutomaton cta=split(ta_tran.getFirst(), ta_tran.getSecond().getRHS());
+			TreeAutomata cta=split(ta_tran.getFirst(), ta_tran.getSecond().getRHS());
 			toAdd.add(cta);
 	    	rootsToLift.add(cta.getFinal());
 		}
@@ -320,9 +320,9 @@ public class ForestAutomaton {
     	
     	return finalRuleLHSToTA(rootsToLift, ret);
     }
-    private HashSet<Pair<TreeAutomaton, Transition>> getBackwardBoxTransWithRefOnLHS(int root, ForestAutomaton fa){
-    	HashSet<Pair<TreeAutomaton, Transition>> ret=new HashSet<Pair<TreeAutomaton, Transition>>();
-	  	for(TreeAutomaton ta:fa.lt)
+    private HashSet<Pair<TreeAutomata, Transition>> getBackwardBoxTransWithRefOnLHS(int root, ForestAutomata fa){
+    	HashSet<Pair<TreeAutomata, Transition>> ret=new HashSet<Pair<TreeAutomata, Transition>>();
+	  	for(TreeAutomata ta:fa.lt)
     		for(int s:ta.getStates())
         		if(ta.isReferenceTo(s, root))
         			for(Transition tran:ta.getTransFrom(s)){
@@ -336,7 +336,7 @@ public class ForestAutomaton {
         						Box box=boxes.get(sublabel);
         						for(int pos:box.getBackPorts()){
         							if(from.get(startLoc+pos)==s){
-        								ret.add(new Pair<TreeAutomaton, Transition>(ta, tran));
+        								ret.add(new Pair<TreeAutomata, Transition>(ta, tran));
         								break check_backtran;
         							}
         						}
@@ -347,7 +347,7 @@ public class ForestAutomaton {
         			}
     	return ret;
     }
-    private void openBox(ForestAutomaton fa, TreeAutomaton ta, Transition tran) throws Exception {
+    private void openBox(ForestAutomata fa, TreeAutomata ta, Transition tran) throws Exception {
     	for(int sublabel:tran.getLabel()){
 	    	Box box=boxes.get(sublabel);
 	    	if(box==null)
@@ -364,7 +364,7 @@ public class ForestAutomaton {
 					assert rootRef!=-1;
 					stMapping.put(s, rootRef);
 				}else
-					stMapping.put(s, TreeAutomaton.getNewNodeNumber());
+					stMapping.put(s, TreeAutomata.getNewNodeNumber());
 			}
 	    	tran=ta.removeSubTransition(tran, sublabel);
 			Box boxFA=new Box(boxes.get(sublabel),stMapping);
@@ -374,7 +374,7 @@ public class ForestAutomaton {
 			for(int o:boxFA.outPorts)
 				attachTA(fa.getTreeAutomataWithRoot(o), boxFA.getTreeAutomataWithRoot(o));
 			//internal
-			for(TreeAutomaton internalTA:boxFA.getTreeAutomata()){
+			for(TreeAutomata internalTA:boxFA.getTreeAutomata()){
 				int f=internalTA.getFinal();
 				if(f!=boxFA.inPort&&!boxFA.outPorts.contains(f)){
 					fa.addTreeAutomata(internalTA);
@@ -382,8 +382,8 @@ public class ForestAutomaton {
 			}		
     	}
     }
-	private void attachTA(TreeAutomaton oriTa,
-			TreeAutomaton boxTa) throws Exception {
+	private void attachTA(TreeAutomata oriTa,
+			TreeAutomata boxTa) throws Exception {
 		assert oriTa.getFinal()==boxTa.getFinal();
 		int root=oriTa.getFinal();
 		assert oriTa.getTransTo(root).size()==1;
@@ -398,13 +398,13 @@ public class ForestAutomaton {
 		
 	}
 
-	private TreeAutomaton split(TreeAutomaton ta, int to) throws Exception {
+	private TreeAutomata split(TreeAutomata ta, int to) throws Exception {
     	
     	//ret is a copy of the current TA with all nodes renamed and with the only final state newSt.get(to) 
 		HashMap<Integer,Integer> newSt=new HashMap<Integer, Integer>();
 		for(int id:ta.getStates())
-			newSt.put(id, TreeAutomaton.getNewNodeNumber());
-		TreeAutomaton ret=new TreeAutomaton(ta, newSt);
+			newSt.put(id, TreeAutomata.getNewNodeNumber());
+		TreeAutomata ret=new TreeAutomata(ta, newSt);
 		ret.setFinal(newSt.get(to));
 
 		//remove the transitions and replace it with a reference
@@ -418,14 +418,14 @@ public class ForestAutomaton {
 		return ret;
 	}  
 
-	private HashSet<ForestAutomaton> finalRuleLHSToTA(ArrayList<Integer> rootsToLift, HashSet<ForestAutomaton> sfa) throws Exception {
+	private HashSet<ForestAutomata> finalRuleLHSToTA(ArrayList<Integer> rootsToLift, HashSet<ForestAutomata> sfa) throws Exception {
 		int tgtNode=rootsToLift.remove(0);
-		HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
-		for(ForestAutomaton fa:sfa) //make sure there is only one rule with tgtNode on the RHS
+		HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
+		for(ForestAutomata fa:sfa) //make sure there is only one rule with tgtNode on the RHS
 			ret.addAll(onlyOneFinalRule(fa, fa.getTreeAutomataWithRoot(tgtNode)));
 
-		for(ForestAutomaton fa:ret){ //make a new TA for each LHS state of the only final rule
-    		TreeAutomaton srcTA=fa.getTreeAutomataWithRoot(tgtNode);
+		for(ForestAutomata fa:ret){ //make a new TA for each LHS state of the only final rule
+    		TreeAutomata srcTA=fa.getTreeAutomataWithRoot(tgtNode);
     		HashSet<Transition> finalTrans=srcTA.getTransTo(tgtNode);
     		assert finalTrans.size()==1;
     		Transition finalTran=getFirst(finalTrans);
@@ -438,12 +438,12 @@ public class ForestAutomaton {
     		ArrayList<Integer> newfrom=new ArrayList<Integer>(lhs);
     		//let n=from.size(), create TAs A1...An, create states q1'...qn' and add to newfrom
     		for(int i=0;i<lhs.size();i++){
-    			newfrom.set(i,TreeAutomaton.getNewNodeNumber());
+    			newfrom.set(i,TreeAutomata.getNewNodeNumber());
     			HashMap<Integer,Integer> stMapping=new HashMap<Integer,Integer>();
     			for(int s:srcTA.getStates()){
-    				stMapping.put(s, TreeAutomaton.getNewNodeNumber());
+    				stMapping.put(s, TreeAutomata.getNewNodeNumber());
     			}
-    			TreeAutomaton Ai=new TreeAutomaton(srcTA,stMapping);
+    			TreeAutomata Ai=new TreeAutomata(srcTA,stMapping);
     			Ai.setFinal(stMapping.get(lhs.get(i)));
     			fa.addTreeAutomata(Ai);
     			
@@ -461,11 +461,11 @@ public class ForestAutomaton {
     }
 
     
-    private HashSet<ForestAutomaton> onlyOneFinalRule(ForestAutomaton srcFa, TreeAutomaton srcTA) throws Exception {
+    private HashSet<ForestAutomata> onlyOneFinalRule(ForestAutomata srcFa, TreeAutomata srcTA) throws Exception {
     	//make sure tgtNode is not on the LHS of all rules
-    	finalNotInLHS(srcTA);
+    	unwindTA_fromRoot(srcTA);
     	
-    	HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
+    	HashSet<ForestAutomata> ret=new HashSet<ForestAutomata>();
     	HashSet<Transition> trans=srcTA.getTransTo(srcTA.getFinal());
     	for(Transition tran:trans){
     		srcTA.delTrans(tran);
@@ -473,16 +473,16 @@ public class ForestAutomaton {
     	for(Transition tran:trans){
     		
     		
-			ForestAutomaton fa=new ForestAutomaton(srcFa);
-			TreeAutomaton ta=fa.getTreeAutomataWithRoot(srcTA.getFinal());
+			ForestAutomata fa=new ForestAutomata(srcFa);
+			TreeAutomata ta=fa.getTreeAutomataWithRoot(srcTA.getFinal());
 			ta.addTrans(tran);
 			ret.add(fa);
 		}
     	return ret;       
     }
 
-    private void finalNotInLHS(TreeAutomaton srcTA) throws Exception {
-		int newRoot=TreeAutomaton.getNewNodeNumber();
+    private void unwindTA_fromRoot(TreeAutomata srcTA) throws Exception {
+		int newRoot=TreeAutomata.getNewNodeNumber();
 		for(Transition finalTran:srcTA.getTransTo(srcTA.getFinal())){
 			ArrayList<Integer> from=finalTran.getLHS();
 			SortedList<Integer> label=finalTran.getLabel();
@@ -497,7 +497,7 @@ public class ForestAutomaton {
     
     public HashSet<Integer> getStates(){
     	HashSet<Integer> states=new HashSet<Integer>();
-    	for(TreeAutomaton ta:lt){
+    	for(TreeAutomata ta:lt){
     		states.addAll(ta.getStates());
     	}
     	return states;
@@ -505,27 +505,27 @@ public class ForestAutomaton {
 
     
     //tree automata operations
-	public void addTreeAutomata(TreeAutomaton n) {
+	public void addTreeAutomata(TreeAutomata n) {
 		lt.add(n);
 	}    
 	public HashSet<Integer> getRoots(){
 		HashSet<Integer> ret=new HashSet<Integer>();
-		for(TreeAutomaton ta:lt){
+		for(TreeAutomata ta:lt){
 			ret.add(ta.getFinal());
 		}
 		return ret;
 		
 	}
 	
-	public TreeAutomaton getTreeAutomataWithRoot(int state){
-		for(TreeAutomaton ta:lt){
+	public TreeAutomata getTreeAutomataWithRoot(int state){
+		for(TreeAutomata ta:lt){
 			if(ta.getFinal()==state)
 				return ta;
 		}
 		return null;
 	}
 
-	public ArrayList<TreeAutomaton> getTreeAutomata() {
+	public ArrayList<TreeAutomata> getTreeAutomata() {
 		return lt;
 	}
 
@@ -544,7 +544,7 @@ public class ForestAutomaton {
 		for(String var:pointers.keySet()){
 			ret+=(var+"->"+pointers.get(var)+"\n");
 		}
-		for(TreeAutomaton ta:lt){
+		for(TreeAutomata ta:lt){
 			ret+=(ta.toString()+"\n");
 		}
 		return ret;

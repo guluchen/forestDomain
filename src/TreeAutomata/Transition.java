@@ -1,4 +1,4 @@
-package TreeAutomaton;
+package TreeAutomata;
 
 import java.util.ArrayList;
 

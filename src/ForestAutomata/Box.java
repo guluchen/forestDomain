@@ -1,4 +1,4 @@
-package ForestAutomaton;
+package ForestAutomata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,7 +6,7 @@ import java.util.HashSet;
 
 import Util.ManyToMany;
 
-public class Box extends ForestAutomaton{
+public class Box extends ForestAutomata{
     //for boxes only
 	int inPort;
 	ArrayList<Integer> outPorts;

@@ -1,9 +1,4 @@
-//TODO transitions only as class Transition, not as the a triple
-//TODO Transition = top + Label + bottom, label + bottom = Term, Term = a set of SubTerms, SubTerm = subLabel + states  
-
-
-
-package TreeAutomaton;
+package TreeAutomata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,12 +6,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import ForestAutomaton.ForestAutomaton;
+import ForestAutomata.ForestAutomata;
 import Util.ManyToMany;
 import Util.Pair;
 import Util.SortedList;
 
-public class TreeAutomaton{
+public class TreeAutomata{
 
 
 	static private int freshNodeNum=3;//state 1,2 are reserved for the roots of the null and undef TAs, resp.
@@ -26,28 +21,28 @@ public class TreeAutomaton{
 	private int finalSt;
 	private HashSet<Integer> states=new HashSet<Integer>();
     //Constructors
-    public TreeAutomaton(){
+    public TreeAutomata(){
     	rank=new HashMap<Integer,Integer>();
     	trans=new ManyToMany<ArrayList<Integer>, Integer>();	
         states=new HashSet<Integer>();
         addSubLabel(-1,0);//for ref to null
         addSubLabel(-2,0);//for ref to undef
     }
-    public TreeAutomaton(TreeAutomaton c){
+    public TreeAutomata(TreeAutomata c){
     	rank=new HashMap<Integer,Integer>(c.rank);
     	trans=new ManyToMany<ArrayList<Integer>, Integer>(c.trans);	
         states=new HashSet<Integer>(c.states);
         finalSt=c.finalSt;
     }
 
-    public TreeAutomaton(TreeAutomaton c, HashMap<Integer, Integer> stMapping) throws Exception {
+    public TreeAutomata(TreeAutomata c, HashMap<Integer, Integer> stMapping) throws Exception {
     	stMapping.put(1, 1);//for the final of null
     	stMapping.put(2, 2);//for the final of undef
     	rank=new HashMap<Integer,Integer>(c.rank);
     	trans=new ManyToMany<ArrayList<Integer>, Integer>();
     	for(int to:c.trans.rightKeySet()){
     		for(ArrayList<Integer> lhs_label:c.trans.leftSetFromRightKey(to)){
-    			Pair<ArrayList<Integer>,SortedList<Integer>> lhs_label_pair=c.separateFromLabel(lhs_label);
+    			Pair<ArrayList<Integer>,SortedList<Integer>> lhs_label_pair=c.seprateFromLabel(lhs_label);
     			ArrayList<Integer> lhs=lhs_label_pair.getFirst();
     			SortedList<Integer> label=lhs_label_pair.getSecond();
     			
@@ -83,7 +78,7 @@ public class TreeAutomaton{
     	HashSet<SortedList<Integer>> ret=new HashSet<SortedList<Integer>>();
     	for(int to:trans.rightKeySet()){
 			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
+	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=seprateFromLabel(from_label);
 	        	SortedList<Integer> label=from_label_pair.getSecond();
 	        	ret.add(label);
 			}
@@ -202,7 +197,7 @@ public class TreeAutomaton{
     	HashSet<Transition> ret=new HashSet<Transition>();	
     	for(int to:trans.rightKeySet()){
 			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
+	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=seprateFromLabel(from_label);
 	    		ArrayList<Integer> from=from_label_pair.getFirst();
 	    		SortedList<Integer> label=from_label_pair.getSecond();
 	    		ret.add(new Transition(from,label,to));
@@ -215,7 +210,7 @@ public class TreeAutomaton{
     	HashSet<Transition> ret=new HashSet<Transition>();	
     	for(int to:trans.rightKeySet()){
 			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
+	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=seprateFromLabel(from_label);
 	    		ArrayList<Integer> from=from_label_pair.getFirst();
 	    		SortedList<Integer> label=from_label_pair.getSecond();
 	    		if(from.contains(from_state))
@@ -230,7 +225,7 @@ public class TreeAutomaton{
     	for(int to:trans.rightKeySet()){
     		if(to==to_state)
 				for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-		    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
+		    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=seprateFromLabel(from_label);
 		    		ArrayList<Integer> from=from_label_pair.getFirst();
 		    		SortedList<Integer> label=from_label_pair.getSecond();
 	    			ret.add(new Transition(from,label,to));
@@ -243,7 +238,7 @@ public class TreeAutomaton{
     	HashSet<ArrayList<Integer>> ret= new HashSet<ArrayList<Integer>>();
     	if(trans.leftSetFromRightKey(to)!=null)
 	    	for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
+	    		Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=seprateFromLabel(from_label);
 	    		ArrayList<Integer> from=from_label_pair.getFirst();
 	        	SortedList<Integer> label=from_label_pair.getSecond();
 	        	if(label.equals(tgtLabel))
@@ -261,7 +256,6 @@ public class TreeAutomaton{
     	return ret;
     }
     
-    //TODO: subTransition or edgeTerm?
     public Transition removeSubTransition(Transition srcTran, 
     		int srcSubLabel) throws Exception{
 
@@ -272,15 +266,13 @@ public class TreeAutomaton{
     	int startLoc=getStartLoc(label,srcSubLabel);
     	for(int i=startLoc;i<startLoc+rank.get(srcSubLabel);i++)
         	from.remove(startLoc);
-    	label.remove(new Integer(srcSubLabel));
-       	//remember, only an integer would mean a position, not the object
+       	label.remove(new Integer(srcSubLabel));
 	
     	this.delTrans(srcTran);
     	this.addTrans(from,label,to);
     	return new Transition(from,label,to);
     }
 
-    //TODO make symmetric? (transition, symbol, lhs)
     public Transition addSubTransition(Transition srcTran, 
     		HashMap<Integer,Integer> tgtRank, Transition tgtTran) throws Exception{
 
@@ -309,8 +301,7 @@ public class TreeAutomaton{
 
     
     //automata operations
-    //TODO shouldn't we check some more things before doing union? Like that the sets of states are disjoint?
-    public void union(TreeAutomaton tgt){
+    public void union(TreeAutomata tgt){
     	if(this.finalSt!=tgt.finalSt){
     		System.out.println("Only union between automata with the same root is allowed");
     		System.exit(0);
@@ -324,19 +315,18 @@ public class TreeAutomaton{
     	int oriRoot=getFinal();
     	if(this.getTransFrom(oriRoot).size()==0)
     		return;
-    	int newRoot=TreeAutomaton.getNewNodeNumber();
-    	//TODO getNewNodeNumber() -> getNewStateNumber()? Node should rather be state.
+    	int newRoot=TreeAutomata.getNewNodeNumber();
     	
     	for(SortedList<Integer> label:this.getLabels())
     		for(ArrayList<Integer> from:this.getFrom(oriRoot, label)){
     			this.addTrans(from, label, newRoot);
     		}
-    	swapNamesOfStates(oriRoot, newRoot);//TODO why do we do this?
+    	swapNamesOfStates(oriRoot, newRoot);
     	setFinal(oriRoot);
     }
   
 
-	static public int getNewNodeNumber(){//Node -> State everywhere?
+	static public int getNewNodeNumber(){
 		return freshNodeNum++;
 	}
 	
@@ -348,8 +338,8 @@ public class TreeAutomaton{
 	@Override
 	public String toString() {
 		HashMap<Integer,String> numSym=new HashMap<Integer,String>();
-		for(String sym:ForestAutomaton.getSymbols()){
-			numSym.put(ForestAutomaton.getSymbolMap(sym), sym);
+		for(String sym:ForestAutomata.getSymbols()){
+			numSym.put(ForestAutomata.getSymbolMap(sym), sym);
 		}
 		
 		String ret="Ops ";
@@ -409,7 +399,7 @@ public class TreeAutomaton{
     	return from_label;
     }
     
-    private Pair<ArrayList<Integer>, SortedList<Integer>> separateFromLabel(ArrayList<Integer> from_label){
+    private Pair<ArrayList<Integer>, SortedList<Integer>> seprateFromLabel(ArrayList<Integer> from_label){
     	ArrayList<Integer> from=new ArrayList<Integer>();
     	SortedList<Integer> label=new SortedList<Integer>();
     	int subLabelIndex=0;
