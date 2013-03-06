@@ -51,4 +51,16 @@ public class States implements Iterable<Integer>{
 	public Iterator<Integer> iterator() {
 		return states.iterator();
 	}
+    public String toString()
+    { 
+           return states.toString(); 
+    }	
+	public boolean equals(Object obj) {
+        if (obj == null) return false;
+        else if (!(obj instanceof States)) return false;
+        else {
+        	States o=(States)obj;
+        	return this.states.equals(o.states);
+        }
+    }    
 }

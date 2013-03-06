@@ -1,5 +1,7 @@
 package TreeAutomaton;
 
+import java.util.HashSet;
+
 public class Transition {
     private States bottom;
     private Label label;
@@ -49,6 +51,12 @@ public class Transition {
     	return top;
     }
 
+    public Term getTerm(){
+    	return new Term(label,bottom);
+    }
+    public HashSet<SubTerm> getSubTerms() throws Exception{
+    	return new Term(label,bottom).getSubTerms();
+    }
     public void setTop(int top) {
     	this.top = top;
     }

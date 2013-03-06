@@ -18,14 +18,14 @@ public class TreeAutomatonTester {
     	
     	t.addTrans(new Transition(
     	new States() {{add(2);add(3);add(4);add(3);}}, 
-    	new Label() {{add(1);add(2);}}, 
+    	new Label() {{add(1,2);add(2,2);}}, 
     	1));
     	
     	t.addTrans(new Transition(new States() {{add(1);add(2);}}, 
-    	new Label() {{add(2);}}, 
+    	new Label() {{add(2,2);}}, 
     	0));
     	t.addTrans(new Transition(new States() {{add(1);add(1);}}, 
-    	new Label() {{add(1);}}, 
+    	new Label() {{add(1,2);}}, 
     	1));
     	/*
     	 * Ops a1:2 a2:2 

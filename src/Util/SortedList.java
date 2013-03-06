@@ -49,5 +49,5 @@ public class SortedList<E> extends AbstractList<E> {
         	if(this.get(i)!=((SortedList<E>) obj).get(i)) return false;
         }
         return true;
-      }
+    }
 }

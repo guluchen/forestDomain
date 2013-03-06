@@ -9,10 +9,10 @@ import java.util.Set;
 
 import TreeAutomaton.Label;
 import TreeAutomaton.States;
+import TreeAutomaton.SubTerm;
 import TreeAutomaton.Transition;
 import TreeAutomaton.TreeAutomaton;
 import Util.Pair;
-import Util.SortedList;
 
 public class ForestAutomaton {
 	final static int NULL=1;
@@ -84,13 +84,13 @@ public class ForestAutomaton {
 
     	Label label=new Label();
     	Label label_to_undef=new Label();
-    	label_to_undef.add(-UNDEF);
+    	label_to_undef.add(-UNDEF,0);
     	States refs_to_undef=new States();
     	for(String selector:type){
     		if(symNum.get(selector)==null)
     			symNum.put(selector, TreeAutomaton.getNewSymNumber());
     		n.addSubLabel(symNum.get(selector), 1);
-    		label.add(symNum.get(selector));
+    		label.add(symNum.get(selector),1);
     		refs_to_undef.add(TreeAutomaton.getNewNodeNumber());
     	}
     	n.addTrans(new Transition(refs_to_undef, label, newNodeNumber));
@@ -106,7 +106,15 @@ public class ForestAutomaton {
     	if(pointers.get(x)!=null &&noOtherReferenceTo(pointers.get(x), x)){
     		throw new Exception("Error: a memory leak detected on an assignment to "+x+"\n");
     	}
-    	pointers.put(x,0);
+    	TreeAutomaton n=new TreeAutomaton();
+    	int newNodeNumber=TreeAutomaton.getNewNodeNumber();
+    	pointers.put(x, newNodeNumber);
+    	n.setFinal(newNodeNumber);
+    	Label nullRef=new Label();
+		nullRef.add(-NULL,0);
+		n.addTrans(new Transition(new States(),nullRef,newNodeNumber));
+    	addTreeAutomata(n);
+		
     	ret.add(this);
     	return ret;
     }
@@ -136,9 +144,9 @@ public class ForestAutomaton {
 					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
 					ta.addTrans(new Transition(LHS, label, tgtNode));
 					
-					SortedList<Integer> nullRef=new SortedList<Integer>();
-					nullRef.add(-NULL);
-					ta.addTrans(new Transition(new ArrayList<Integer>(),nullRef,new_z_ref));
+					Label nullRef=new Label();
+					nullRef.add(-NULL,0);
+					ta.addTrans(new Transition(new States(),nullRef,new_z_ref));
 				}
 				ret.add(fa);
 			}
@@ -172,8 +180,8 @@ public class ForestAutomaton {
 				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
-				ArrayList<Integer> LHS=tran.getBottom();
-				SortedList<Integer> label=tran.getLabel();
+				States LHS=tran.getBottom();
+				Label label=tran.getLabel();
 				if(!label.contains(symNum.get(z))){
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
 				}else{
@@ -182,10 +190,10 @@ public class ForestAutomaton {
 					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
 					ta.addTrans(new Transition(LHS, label, tgtNode));
 					
-					SortedList<Integer> ref=new SortedList<Integer>();
-					ref.add(-pointers.get(y));
+					Label ref=new Label();
+					ref.add(-pointers.get(y),0);
 					ta.addSubLabel(-pointers.get(y), 0);
-					ta.addTrans(new Transition(new ArrayList<Integer>(),ref,new_z_ref));
+					ta.addTrans(new Transition(new States(),ref,new_z_ref));
 				}
 				ret.add(fa);
 			}
@@ -209,8 +217,8 @@ public class ForestAutomaton {
 				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
-				ArrayList<Integer> LHS=tran.getBottom();
-				SortedList<Integer> label=tran.getLabel();
+				States LHS=tran.getBottom();
+				Label label=tran.getLabel();
 				 
 				if(!label.contains(symNum.get(z))){
 					throw new Exception("Error: "+y+" does not have the selector "+z+"\n");
@@ -224,9 +232,9 @@ public class ForestAutomaton {
 						ta.addTrans(new Transition(LHS, label, tgtNode));
 
 						for(Transition tran_to_x:ta.getTransTo(x_ref)){
-							ArrayList<Integer> from_x=tran_to_x.getBottom();
-							SortedList<Integer> label_x=tran_to_x.getLabel();
-							ta.addTrans(new Transition(new ArrayList<Integer>(from_x), new SortedList<Integer>(label_x), new_x_ref));
+							States from_x=tran_to_x.getBottom();
+							Label label_x=tran_to_x.getLabel();
+							ta.addTrans(new Transition(new States(from_x), new Label(label_x), new_x_ref));
 						}
 						TreeAutomaton ta_x=split(ta, new_x_ref);
 						fa.pointers.put(x, ta_x.getFinal());
@@ -249,11 +257,11 @@ public class ForestAutomaton {
     
 	//private functions for FA transformation
     private boolean isJoint(int j) throws Exception{
-		SortedList<Integer> label=new SortedList<Integer>();
-		label.add(-j);
+		Label label=new Label();
+		label.add(-j,0);
 		int referenceCnt=0;
     	for(TreeAutomaton ta:lt){
-    		if(ta.getTo(new ArrayList<Integer>(), label).size()!=0){
+    		if(ta.getTo(new States(), label).size()!=0){
     			referenceCnt++;
     			if(referenceCnt>=2)
     				return true;
@@ -328,8 +336,8 @@ public class ForestAutomaton {
     		for(int s:ta.getStates())
         		if(ta.isReferenceTo(s, root))
         			for(Transition tran:ta.getTransFrom(s)){
-        				SortedList<Integer> label=tran.getLabel();
-        				ArrayList<Integer> from=tran.getBottom();
+        				Label label=tran.getLabel();
+        				States from=tran.getBottom();
         				int startLoc=0;
         				check_backtran:
         				for(int i=0;i<label.size();i++){
@@ -368,7 +376,7 @@ public class ForestAutomaton {
 				}else
 					stMapping.put(s, TreeAutomaton.getNewNodeNumber());
 			}
-	    	tran=ta.removeSubTransition(tran, sublabel);
+	    	tran=ta.removeSubTerm(tran, sublabel);
 			Box boxFA=new Box(boxes.get(sublabel),stMapping);
 			//inport
 			attachTA(ta, boxFA.getTreeAutomataWithRoot(tran.getTop()));
@@ -393,7 +401,9 @@ public class ForestAutomaton {
 		
 		for(Transition boxTran:boxTa.getTrans()){
 			if(boxTran.getTop()==root){
-				oriTa.addSubTransition(oriTran, boxTa.getRankMapping(), boxTran);
+				for(SubTerm t:boxTran.getSubTerms()){
+					oriTran=oriTa.addSubTerm(oriTran, t.getSubLabel(),t.getStates()); 
+				}
 			}else
 				oriTa.addTrans(boxTran);
 		}
@@ -412,10 +422,10 @@ public class ForestAutomaton {
 		//remove the transitions and replace it with a reference
 		for(Transition tran:ta.getTransTo(to))
 			ta.delTrans(tran);
-    	SortedList<Integer> portLabel=new SortedList<Integer>();
-    	portLabel.add(-newSt.get(to));
+    	Label portLabel=new Label();
+    	portLabel.add(-newSt.get(to),0);
     	ta.addSubLabel(-newSt.get(to), 0);
-    	ta.addTrans(new Transition(new ArrayList<Integer>(), portLabel, to));
+    	ta.addTrans(new Transition(new States(), portLabel, to));
 		
 		return ret;
 	}  
@@ -423,38 +433,38 @@ public class ForestAutomaton {
 	private HashSet<ForestAutomaton> finalRuleLHSToTA(ArrayList<Integer> rootsToLift, HashSet<ForestAutomaton> sfa) throws Exception {
 		int tgtNode=rootsToLift.remove(0);
 		HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
-		for(ForestAutomaton fa:sfa) //make sure there is only one rule with tgtNode on the RHS
+		for(ForestAutomaton fa:sfa) //make sure there is only one rule with tgtNode on the top 
 			ret.addAll(onlyOneFinalRule(fa, fa.getTreeAutomataWithRoot(tgtNode)));
 
-		for(ForestAutomaton fa:ret){ //make a new TA for each LHS state of the only final rule
+		for(ForestAutomaton fa:ret){ //make a new TA for each bottom state of the only final rule
     		TreeAutomaton srcTA=fa.getTreeAutomataWithRoot(tgtNode);
     		HashSet<Transition> finalTrans=srcTA.getTransTo(tgtNode);
     		assert finalTrans.size()==1;
     		Transition finalTran=getFirst(finalTrans);
     		
-    		ArrayList<Integer> lhs=finalTran.getBottom();
-    		SortedList<Integer> label=finalTran.getLabel();
-    		int rhs=finalTran.getTop();
+    		States bottom=finalTran.getBottom();
+    		Label label=finalTran.getLabel();
+    		int top=finalTran.getTop();
     		
     		srcTA.delTrans(finalTran);
-    		ArrayList<Integer> newfrom=new ArrayList<Integer>(lhs);
+    		States newbottom=new States(bottom);
     		//let n=from.size(), create TAs A1...An, create states q1'...qn' and add to newfrom
-    		for(int i=0;i<lhs.size();i++){
-    			newfrom.set(i,TreeAutomaton.getNewNodeNumber());
+    		for(int i=0;i<bottom.size();i++){
+    			newbottom.set(i,TreeAutomaton.getNewNodeNumber());
     			HashMap<Integer,Integer> stMapping=new HashMap<Integer,Integer>();
     			for(int s:srcTA.getStates()){
     				stMapping.put(s, TreeAutomaton.getNewNodeNumber());
     			}
     			TreeAutomaton Ai=new TreeAutomaton(srcTA,stMapping);
-    			Ai.setFinal(stMapping.get(lhs.get(i)));
+    			Ai.setFinal(stMapping.get(bottom.get(i)));
     			fa.addTreeAutomata(Ai);
     			
-    			SortedList<Integer> reflabel=new SortedList<Integer>();
-    			reflabel.add(-Ai.getFinal());
+    			Label reflabel=new Label();
+    			reflabel.add(-Ai.getFinal(),0);
     			srcTA.addSubLabel(-Ai.getFinal(), 0);
-        		srcTA.addTrans(new Transition(new ArrayList<Integer>(), reflabel, newfrom.get(i)));
+        		srcTA.addTrans(new Transition(new States(), reflabel, newbottom.get(i)));
     		}
-    		srcTA.addTrans(new Transition(newfrom, label, rhs));
+    		srcTA.addTrans(new Transition(newbottom, label, top));
     	}
 		if(rootsToLift.size()!=0)
 			return finalRuleLHSToTA(rootsToLift, ret);
@@ -464,17 +474,14 @@ public class ForestAutomaton {
 
     
     private HashSet<ForestAutomaton> onlyOneFinalRule(ForestAutomaton srcFa, TreeAutomaton srcTA) throws Exception {
-    	//make sure tgtNode is not on the LHS of all rules
-    	unwindTA_fromRoot(srcTA);
-    	
+    	//make sure tgtNode is not on the bottom of all rules
+    	srcTA.unwindTA_fromRoot();
     	HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
     	HashSet<Transition> trans=srcTA.getTransTo(srcTA.getFinal());
     	for(Transition tran:trans){
     		srcTA.delTrans(tran);
     	}
     	for(Transition tran:trans){
-    		
-    		
 			ForestAutomaton fa=new ForestAutomaton(srcFa);
 			TreeAutomaton ta=fa.getTreeAutomataWithRoot(srcTA.getFinal());
 			ta.addTrans(tran);
@@ -483,17 +490,7 @@ public class ForestAutomaton {
     	return ret;       
     }
 
-    private void unwindTA_fromRoot(TreeAutomaton srcTA) throws Exception {
-		int newRoot=TreeAutomaton.getNewNodeNumber();
-		for(Transition finalTran:srcTA.getTransTo(srcTA.getFinal())){
-			ArrayList<Integer> from=finalTran.getBottom();
-			SortedList<Integer> label=finalTran.getLabel();
-			srcTA.addTrans(new Transition(new ArrayList<Integer>(from), new SortedList<Integer>(label), newRoot));
-		}
-		int oriRoot=srcTA.getFinal();
-		srcTA.swapNamesOfStates(newRoot, oriRoot);
-		srcTA.setFinal(oriRoot);
-	}
+
 
 	//state operations
     
