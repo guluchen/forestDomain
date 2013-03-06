@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import TreeAutomaton.Label;
+import TreeAutomaton.States;
 import TreeAutomaton.Transition;
 import TreeAutomaton.TreeAutomaton;
 import Util.Pair;
@@ -84,7 +85,7 @@ public class ForestAutomaton {
     	Label label=new Label();
     	Label label_to_undef=new Label();
     	label_to_undef.add(-UNDEF);
-    	ArrayList<Integer> refs_to_undef=new ArrayList<Integer>();
+    	States refs_to_undef=new States();
     	for(String selector:type){
     		if(symNum.get(selector)==null)
     			symNum.put(selector, TreeAutomaton.getNewSymNumber());
@@ -94,7 +95,7 @@ public class ForestAutomaton {
     	}
     	n.addTrans(new Transition(refs_to_undef, label, newNodeNumber));
     	for(int ref:refs_to_undef)
-        	n.addTrans(new Transition(new ArrayList<Integer>(), label_to_undef, ref));
+        	n.addTrans(new Transition(new States(), label_to_undef, ref));
     	ret.add(this);
     	return ret;
     }
@@ -125,8 +126,8 @@ public class ForestAutomaton {
 				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
-				ArrayList<Integer> LHS=tran.getBottom();
-				SortedList<Integer> label=tran.getLabel();
+				States LHS=tran.getBottom();
+				Label label=tran.getLabel();
 				if(!label.contains(symNum.get(z))){
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
 				}else{
