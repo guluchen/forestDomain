@@ -2,17 +2,12 @@ package TreeAutomaton;
 
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import Util.SortedList;
-
 public class TreeAutomatonTester {
 	private TreeAutomaton t;
-	@SuppressWarnings("serial")
 	@Before
 	public void setUp() throws Exception {
 		t=new TreeAutomaton();
@@ -20,18 +15,18 @@ public class TreeAutomatonTester {
     	t.setFinal(1);
     	t.addSubLabel(1, 2);
     	t.addSubLabel(2, 2);
-
-    	t.addTrans(
-    	new ArrayList<Integer>() {{add(2);add(3);add(4);add(3);}}, 
-    	new SortedList<Integer>() {{add(1);add(2);}}, 
-    	1);
     	
-    	t.addTrans(new ArrayList<Integer>() {{add(1);add(2);}}, 
-    	new SortedList<Integer>() {{add(2);}}, 
-    	0);
-    	t.addTrans(new ArrayList<Integer>() {{add(1);add(1);}}, 
-    	new SortedList<Integer>() {{add(1);}}, 
-    	1);
+    	t.addTrans(new Transition(
+    	new States() {{add(2);add(3);add(4);add(3);}}, 
+    	new Label() {{add(1);add(2);}}, 
+    	1));
+    	
+    	t.addTrans(new Transition(new States() {{add(1);add(2);}}, 
+    	new Label() {{add(2);}}, 
+    	0));
+    	t.addTrans(new Transition(new States() {{add(1);add(1);}}, 
+    	new Label() {{add(1);}}, 
+    	1));
     	/*
     	 * Ops a1:2 a2:2 
     	 * States q0 q1 q2 q3 q4 

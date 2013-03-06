@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import TreeAutomaton.Transition;
 import TreeAutomaton.TreeAutomaton;
 import Util.SortedList;
 
@@ -45,11 +46,11 @@ public class ForestAutomatonTester {
 		label1.add(n);
 		ArrayList<Integer> lhs1=new ArrayList<Integer>();
 		lhs1.add(s2);
-		ta1.addTrans(lhs1, label1, s1);
+		ta1.addTrans(new Transition(lhs1, label1, s1));
 		
 		SortedList<Integer> ref1=new SortedList<Integer>();
 		ref1.add(-s3);
-		ta1.addTrans(new ArrayList<Integer>(), ref1, s2);
+		ta1.addTrans(new Transition(new ArrayList<Integer>(), ref1, s2));
 
 		ta2.setFinal(s3);
 		ta2.addSubLabel(p, 1);
@@ -59,11 +60,11 @@ public class ForestAutomatonTester {
 		label2.add(p);
 		ArrayList<Integer> lhs2=new ArrayList<Integer>();
 		lhs2.add(s4);
-		ta2.addTrans(lhs2, label2, s3);
+		ta2.addTrans(new Transition(lhs2, label2, s3));
 
 		SortedList<Integer> ref2=new SortedList<Integer>();
 		ref2.add(-s1);
-		ta2.addTrans(new ArrayList<Integer>(), ref2, s4);
+		ta2.addTrans(new Transition(new ArrayList<Integer>(), ref2, s4));
 		dll.addTreeAutomata(ta1);
 		dll.addTreeAutomata(ta2);
 		dll.addOutPort(s3);
@@ -232,11 +233,11 @@ public class ForestAutomatonTester {
 			label_s1_s2.add(n);
 			ArrayList<Integer> lhs_s2=new ArrayList<Integer>();
 			lhs_s2.add(s2);
-			ta_X.addTrans(lhs_s2, label_s1_s2, s1);
+			ta_X.addTrans(new Transition(lhs_s2, label_s1_s2, s1));
 			//([])-[NULL]->2
 			SortedList<Integer> nullRef=new SortedList<Integer>();
 			nullRef.add(-ForestAutomaton.NULL);
-			ta_X.addTrans(new ArrayList<Integer>(), nullRef, s2);
+			ta_X.addTrans(new Transition(new ArrayList<Integer>(), nullRef, s2));
 
 			ta_I.setFinal(s3);
 			ta_I.addSubLabel(dll,1);
@@ -247,17 +248,17 @@ public class ForestAutomatonTester {
 			label_s3_s4.add(dll);
 			ArrayList<Integer> lhs_s4=new ArrayList<Integer>();
 			lhs_s4.add(s4);
-			ta_I.addTrans(lhs_s4, label_s3_s4, s3);
+			ta_I.addTrans(new Transition(lhs_s4, label_s3_s4, s3));
 			//([3])-[dll]->3
 			SortedList<Integer> label_s3_s3=new SortedList<Integer>();
 			label_s3_s3.add(dll);
 			ArrayList<Integer> lhs_s3=new ArrayList<Integer>();
 			lhs_s3.add(s3);
-			ta_I.addTrans(lhs_s3, label_s3_s3, s3);
+			ta_I.addTrans(new Transition(lhs_s3, label_s3_s3, s3));
 			//([])-[REF 1]->4
 			SortedList<Integer> ref_s1=new SortedList<Integer>();
 			ref_s1.add(-s1);
-			ta_I.addTrans(new ArrayList<Integer>(), ref_s1, s4);
+			ta_I.addTrans(new Transition(new ArrayList<Integer>(), ref_s1, s4));
 			
 			ta_Y.setFinal(s6);
 			ta_Y.addSubLabel(p, 1);
@@ -271,14 +272,14 @@ public class ForestAutomatonTester {
 			ArrayList<Integer> lhs_s7s8=new ArrayList<Integer>();
 			lhs_s7s8.add(s7);
 			lhs_s7s8.add(s8);
-			ta_Y.addTrans(lhs_s7s8, label_s6_s7s8, s6);
+			ta_Y.addTrans(new Transition(lhs_s7s8, label_s6_s7s8, s6));
 
 			//([])-[null]->7
-			ta_Y.addTrans(new ArrayList<Integer>(), new SortedList<Integer>(nullRef), s7);
+			ta_Y.addTrans(new Transition(new ArrayList<Integer>(), new SortedList<Integer>(nullRef), s7));
 			//([])-[REF 3]->8
 			SortedList<Integer> ref_s3=new SortedList<Integer>();
 			ref_s3.add(-s3);
-			ta_Y.addTrans(new ArrayList<Integer>(), ref_s3, s8);
+			ta_Y.addTrans(new Transition(new ArrayList<Integer>(), ref_s3, s8));
 
 			fa.addTreeAutomata(ta_X);
 			fa.addTreeAutomata(ta_Y);

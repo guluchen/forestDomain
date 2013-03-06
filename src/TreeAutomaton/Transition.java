@@ -1,60 +1,56 @@
 package TreeAutomaton;
 
-import java.util.ArrayList;
-
-import Util.SortedList;
-
 public class Transition {
-    private ArrayList<Integer> LHS;
-    private SortedList<Integer> label;
-    private int RHS;
+    private States bottom;
+    private Label label;
+    private int top;
 
-    public Transition(ArrayList<Integer> LHS, SortedList<Integer> label, int RHS) {
-    	this.LHS = LHS;
+    public Transition(States bottom, Label label, int top) {
+    	this.bottom = bottom;
     	this.label = label;
-    	this.RHS = RHS;
+    	this.top = top;
     }
     public Transition(Transition c){
-    	this.LHS = c.LHS;
+    	this.bottom = c.bottom;
     	this.label = c.label;
-    	this.RHS = c.RHS;
+    	this.top = c.top;
     }
     
     public int hashCode() {
-    	int hashFirst = LHS != null ? LHS.hashCode() : 0;
+    	int hashFirst = bottom != null ? bottom.hashCode() : 0;
     	int hashSecond = label != null ? label.hashCode() : 0;
 
-    	return (hashFirst + hashSecond) * hashSecond + RHS;
+    	return (hashFirst + hashSecond) * hashSecond + top;
     }
 
 
     public String toString()
     { 
-           return "(" + LHS + ", " + label + ", " + RHS + ")"; 
+           return "(" + bottom + ", " + label + ", " + top + ")"; 
     }
 
-    public ArrayList<Integer> getLHS() {
-    	return LHS;
+    public States getBottom() {
+    	return bottom;
     }
 
-    public void setLHS(ArrayList<Integer> LHS) {
-    	this.LHS = LHS;
+    public void setBottom(States LHS) {
+    	this.bottom = LHS;
     }
 
-    public SortedList<Integer> getLabel() {
+    public Label getLabel() {
     	return label;
     }
 
-    public void setLabel(SortedList<Integer> label) {
+    public void setLabel(Label label) {
     	this.label = label;
     }
     
-    public int getRHS() {
-    	return RHS;
+    public int getTop() {
+    	return top;
     }
 
-    public void setRHS(int RHS) {
-    	this.RHS = RHS;
+    public void setTop(int top) {
+    	this.top = top;
     }
     
 }

@@ -1,20 +1,14 @@
-//TODO transitions only as class Transition, not as the a triple
 //TODO Transition = top + Label + bottom, label + bottom = Term, Term = a set of SubTerms, SubTerm = subLabel + states
 
 
 
 package TreeAutomaton;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Map.Entry;
-
 import ForestAutomaton.ForestAutomaton;
 import Util.ManyToMany;
-import Util.Pair;
-import Util.SortedList;
 
 public class TreeAutomaton{
 
@@ -22,21 +16,21 @@ public class TreeAutomaton{
 	static private int freshNodeNum=3;//state 1,2 are reserved for the roots of the null and undef TAs, resp.
 	static private int freshSymNum=1;	
 	private HashMap<Integer,Integer> rank=new HashMap<Integer,Integer>();
-	private ManyToMany<ArrayList<Integer>, Integer> trans=new ManyToMany<ArrayList<Integer>, Integer>();	
+	private ManyToMany<Term, Integer> trans=new ManyToMany<Term, Integer>();	
 	private int finalSt;
-	private HashSet<Integer> states=new HashSet<Integer>();
+	private States states;
 	//Constructors
 	public TreeAutomaton(){
 		rank=new HashMap<Integer,Integer>();
-		trans=new ManyToMany<ArrayList<Integer>, Integer>();	
-		states=new HashSet<Integer>();
+		trans=new ManyToMany<Term, Integer>();	
+		states=new States();
 		addSubLabel(-1,0);//for ref to null
 		addSubLabel(-2,0);//for ref to undef
 	}
 	public TreeAutomaton(TreeAutomaton c){
 		rank=new HashMap<Integer,Integer>(c.rank);
-		trans=new ManyToMany<ArrayList<Integer>, Integer>(c.trans);	
-		states=new HashSet<Integer>(c.states);
+		trans=new ManyToMany<Term, Integer>(c.trans);	
+		states=new States(c.states);
 		finalSt=c.finalSt;
 	}
 
@@ -44,22 +38,20 @@ public class TreeAutomaton{
 		stMapping.put(1, 1);//for the final of null
 		stMapping.put(2, 2);//for the final of undef
 		rank=new HashMap<Integer,Integer>(c.rank);
-		trans=new ManyToMany<ArrayList<Integer>, Integer>();
-		for(int to:c.trans.rightKeySet()){
-			for(ArrayList<Integer> lhs_label:c.trans.leftSetFromRightKey(to)){
-				Pair<ArrayList<Integer>,SortedList<Integer>> lhs_label_pair=c.separateFromLabel(lhs_label);
-				ArrayList<Integer> lhs=lhs_label_pair.getFirst();
-				SortedList<Integer> label=lhs_label_pair.getSecond();
-
-				ArrayList<Integer> new_lhs=new ArrayList<Integer>(lhs);
-				for(int i=0;i<lhs.size();i++){
-					new_lhs.set(i, stMapping.get(lhs.get(i)));
+		trans=new ManyToMany<Term, Integer>();
+		for(int top:c.trans.rightKeySet()){
+			for(Term term:c.trans.leftSetFromRightKey(top)){
+				States bottom=term.getStates();
+				Label label=term.label;
+				States new_bottom=new States(term.getStates());
+				for(int i=0;i<bottom.size();i++){
+					new_bottom.set(i, stMapping.get(bottom.get(i)));
 				}
-				trans.put(mergeFromLabel(new_lhs, label), stMapping.get(to));
+				trans.put(new Term(label,new_bottom), stMapping.get(top));
 			}
 
 		}
-		states=new HashSet<Integer>();
+		states=new States();
 		for(int state:c.getStates()){
 			states.add(stMapping.get(state));
 		}
@@ -79,12 +71,11 @@ public class TreeAutomaton{
 	public int getSubLabelRank(int sublabel){
 		return rank.get(sublabel);
 	}
-	public HashSet<SortedList<Integer>> getLabels(){
-		HashSet<SortedList<Integer>> ret=new HashSet<SortedList<Integer>>();
+	public HashSet<Label> getLabels(){
+		HashSet<Label> ret=new HashSet<Label>();
 		for(int to:trans.rightKeySet()){
-			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-				Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
-				SortedList<Integer> label=from_label_pair.getSecond();
+			for(Term term:trans.leftSetFromRightKey(to)){
+				Label label=term.getLabel();
 				ret.add(label);
 			}
 		}
@@ -95,7 +86,7 @@ public class TreeAutomaton{
 	}
 
 	//return the start location of the states correspond to the sublabel
-	public int getStartLoc(SortedList<Integer> label, int sublabel){
+	public int getStartLoc(Label label, int sublabel){
 		int startLoc=0;
 		for(int i=0;i<label.indexOf(sublabel);i++){
 			startLoc+=rank.get(label.get(i));
@@ -111,35 +102,37 @@ public class TreeAutomaton{
 	public int getFinal(){
 		return finalSt;
 	}
-	public HashSet<Integer> getStates(){
+	public States getStates(){
 		return states;
 	}
-	public boolean isState(Integer to) {
-		return states.contains(to);
+	public boolean isState(Integer s) {
+		return states.contains(s);
 	}
 
 	public void swapNamesOfStates(int srcSt, int tgtSt) throws Exception{
 		renameState(srcSt,0);
 		renameState(tgtSt,srcSt);
 		renameState(0,tgtSt);
-	}	
-	public boolean isReferenceTo(int to,int rootRef){
-		SortedList<Integer> label=new SortedList<Integer>();
-		label.add(-rootRef);
-		if(this.getFrom(to, label).size()==0)
+	}
+	
+	//check if state s is a root reference to TA_root
+	public boolean isReferenceTo(int s,int root){
+		Label label=new Label();
+		label.add(-root);
+		if(this.getFrom(s, label).size()==0)
 			return false;
 		else
 			return true;
 	}
 
-	//returns -1 if it is not a root reference
+	//returns -1 if it is not a root reference, otherwise, return the tree root it references to
 	public int referenceTo(int rootRef){
 
 		for(Transition tran:getTransTo(rootRef)){
-			if(tran.getLHS().size()!=0)
+			if(tran.getBottom().size()!=0)
 				return -1;
 			else{
-				SortedList<Integer> label=tran.getLabel();
+				Label label=tran.getLabel();
 				if(label.size()!=1)
 					return -1;
 				else if(label.iterator().next()>0)
@@ -152,7 +145,7 @@ public class TreeAutomaton{
 		return -1;
 	}
 
-	public void renameState(int oriSt, int newSt) throws Exception{
+	public void renameState(Integer oriSt, Integer newSt) throws Exception{
 		if(finalSt==oriSt) finalSt=newSt;
 		if(states.contains(oriSt)){
 			states.remove(oriSt);
@@ -162,17 +155,17 @@ public class TreeAutomaton{
 		}
 		HashSet<Transition> toAdd=new HashSet<Transition>();
 		for(Transition tran:this.getTrans()){
-			int rhs=tran.getRHS();
-			SortedList<Integer> label = tran.getLabel();
-			ArrayList<Integer> lhs=tran.getLHS();
+			int top=tran.getTop();
+			Label label = tran.getLabel();
+			States bottom=tran.getBottom();
 
-			ArrayList<Integer> new_lhs=new ArrayList<Integer>(lhs);
-			for(int i=0;i<new_lhs.size();i++){
-				if(new_lhs.get(i)==oriSt)
-					new_lhs.set(i, newSt);
+			States new_bottom=new States(bottom);
+			for(int i=0;i<new_bottom.size();i++){
+				if(new_bottom.get(i)==oriSt)
+					new_bottom.set(i, newSt);
 			}
-			rhs=(rhs!=oriSt)?rhs:newSt;
-			toAdd.add(new Transition(new_lhs, label,rhs));	
+			top=(top!=oriSt)?top:newSt;
+			toAdd.add(new Transition(new_bottom, label,top));	
 		}
 		trans.clear();
 
@@ -181,81 +174,68 @@ public class TreeAutomaton{
 		}
 	}
 	//transition operations
-	public void addTrans(ArrayList<Integer> from, SortedList<Integer> label, int to) throws Exception{
-		states.addAll(from);
-		states.add(to);
-		trans.put(mergeFromLabel(from,label), to);
-	}
 	public void addTrans(Transition tran) throws Exception {
-		states.addAll(tran.getLHS());
-		states.add(tran.getRHS());
-		trans.put(mergeFromLabel(tran.getLHS(),tran.getLabel()), tran.getRHS());
+		states.addAll(tran.getBottom());
+		states.add(tran.getTop());
+		trans.put(new Term(tran.getLabel(),tran.getBottom()), tran.getTop());
 	}
 
-	public void delTrans(ArrayList<Integer> from, SortedList<Integer> label, int to) throws Exception{
-		trans.removePair(mergeFromLabel(from,label), to);
-	}
 	public void delTrans(Transition tran) throws Exception{
-		trans.removePair(mergeFromLabel(tran.getLHS(),tran.getLabel()), tran.getRHS());
+		trans.removePair(new Term(tran.getLabel(),tran.getBottom()), tran.getTop());
 	}
 	public HashSet<Transition> getTrans(){
 		HashSet<Transition> ret=new HashSet<Transition>();	
 		for(int to:trans.rightKeySet()){
-			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-				Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
-				ArrayList<Integer> from=from_label_pair.getFirst();
-				SortedList<Integer> label=from_label_pair.getSecond();
+			for(Term term:trans.leftSetFromRightKey(to)){
+				States from=term.getStates();
+				Label label=term.getLabel();
 				ret.add(new Transition(from,label,to));
 			}
 		}
 		return ret;
 	}
 
-	public HashSet<Transition> getTransFrom(int from_state){
+	public HashSet<Transition> getTransFrom(int s){
 		HashSet<Transition> ret=new HashSet<Transition>();	
-		for(int to:trans.rightKeySet()){
-			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-				Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
-				ArrayList<Integer> from=from_label_pair.getFirst();
-				SortedList<Integer> label=from_label_pair.getSecond();
-				if(from.contains(from_state))
-					ret.add(new Transition(from,label,to));
+		for(int top:trans.rightKeySet()){
+			for(Term term:trans.leftSetFromRightKey(top)){
+				States bottom=term.getStates();
+				Label label=term.getLabel();
+				if(bottom.contains(s))
+					ret.add(new Transition(bottom,label,top));
 			}
 		}
 		return ret;
 	}
 
-	public HashSet<Transition> getTransTo(int to_state){
+	public HashSet<Transition> getTransTo(int s){
 		HashSet<Transition> ret=new HashSet<Transition>();	
-		for(int to:trans.rightKeySet()){
-			if(to==to_state)
-				for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-					Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
-					ArrayList<Integer> from=from_label_pair.getFirst();
-					SortedList<Integer> label=from_label_pair.getSecond();
-					ret.add(new Transition(from,label,to));
+		for(int top:trans.rightKeySet()){
+			if(top==s)
+				for(Term term:trans.leftSetFromRightKey(top)){
+					States bottom=term.getStates();
+					Label label=term.getLabel();
+					ret.add(new Transition(bottom,label,top));
 				}
 		}
 		return ret;
 	}
 
-	public HashSet<ArrayList<Integer>> getFrom(int to, SortedList<Integer> tgtLabel){
-		HashSet<ArrayList<Integer>> ret= new HashSet<ArrayList<Integer>>();
-		if(trans.leftSetFromRightKey(to)!=null)
-			for(ArrayList<Integer> from_label:trans.leftSetFromRightKey(to)){
-				Pair<ArrayList<Integer>, SortedList<Integer>> from_label_pair=separateFromLabel(from_label);
-				ArrayList<Integer> from=from_label_pair.getFirst();
-				SortedList<Integer> label=from_label_pair.getSecond();
+	public HashSet<States> getFrom(int top, Label tgtLabel){
+		HashSet<States> ret= new HashSet<States>();
+		if(trans.leftSetFromRightKey(top)!=null)
+			for(Term term:trans.leftSetFromRightKey(top)){
+				States bottom=term.getStates();
+				Label label=term.getLabel();
 				if(label.equals(tgtLabel))
-					ret.add(from);
+					ret.add(bottom);
 			}
 		return ret;
 	}
-	public HashSet<Integer> getTo(ArrayList<Integer> from, SortedList<Integer> label) throws Exception{
+	public HashSet<Integer> getTo(States from, Label label) throws Exception{
 		HashSet<Integer> ret =new HashSet<Integer>();
-		ArrayList<Integer> from_label=mergeFromLabel(from,label);
-		if(trans.rightSetFromLeftKey(from_label)!=null)
-			for(int to:trans.rightSetFromLeftKey(from_label)){
+		if(trans.rightSetFromLeftKey(new Term(label,from))!=null)
+			for(int to:trans.rightSetFromLeftKey(new Term(label,from))){
 				ret.add(to);
 			}
 		return ret;
@@ -265,18 +245,17 @@ public class TreeAutomaton{
 	public Transition removeSubTransition(Transition srcTran,
 			int srcSubLabel) throws Exception{
 
-		ArrayList<Integer> from=new ArrayList<Integer>(srcTran.getRHS());
-		SortedList<Integer> label=new SortedList<Integer>(srcTran.getLabel());
-		int to=srcTran.getRHS();
+		States from=new States(srcTran.getBottom());
+		Label label=new Label(srcTran.getLabel());
+		int to=srcTran.getTop();
 
 		int startLoc=getStartLoc(label,srcSubLabel);
 		for(int i=startLoc;i<startLoc+rank.get(srcSubLabel);i++)
 			from.remove(startLoc);
-		label.remove(new Integer(srcSubLabel));
-		//remember, only an integer would mean a position, not the object
+		label.remove(srcSubLabel);
 
 		this.delTrans(srcTran);
-		this.addTrans(from,label,to);
+		this.addTrans(new Transition(from,label,to));
 		return new Transition(from,label,to);
 	}
 
@@ -288,21 +267,21 @@ public class TreeAutomaton{
 			this.addSubLabel(tgtSublabel, tgtRank.get(tgtSublabel));
 		}
 
-		ArrayList<Integer> from=new ArrayList<Integer>(srcTran.getRHS());
-		SortedList<Integer> label=new SortedList<Integer>(srcTran.getLabel());
-		int to=srcTran.getRHS();
+		States from=new States(srcTran.getBottom());
+		Label label=new Label(srcTran.getLabel());
+		int to=srcTran.getTop();
 
 		label.addAll(tgtTran.getLabel());
 		int j=0;
 		for(int tgtSubLabel:tgtTran.getLabel()){
 			int startLoc=getStartLoc(label,tgtSubLabel);
 			for(int i=0;i<rank.get(tgtSubLabel);i++){
-				from.add(startLoc+i,tgtTran.getLHS().get(j));
+				from.add(startLoc+i,tgtTran.getBottom().get(j));
 				j++;
 			}
 		}
 		this.delTrans(srcTran);
-		this.addTrans(from,label,to);
+		this.addTrans(new Transition(from,label,to));
 		return new Transition(from,label,to);
 	}
 
@@ -327,9 +306,9 @@ public class TreeAutomaton{
 		int newRoot=TreeAutomaton.getNewNodeNumber();
 		//TODO getNewNodeNumber() -> getNewStateNumber()? Node should rather be state.
 
-		for(SortedList<Integer> label:this.getLabels())
-			for(ArrayList<Integer> from:this.getFrom(oriRoot, label)){
-				this.addTrans(from, label, newRoot);
+		for(Label label:getLabels())
+			for(States from:this.getFrom(oriRoot, label)){
+				this.addTrans(new Transition(from, label, newRoot));
 			}
 		swapNamesOfStates(oriRoot, newRoot);//TODO why do we do this?
 		setFinal(oriRoot);
@@ -366,9 +345,9 @@ public class TreeAutomaton{
 
 		ret+="\nTransitions\n";
 		for(Transition tran: this.getTrans()){
-			ArrayList<Integer> from=tran.getLHS();
-			SortedList<Integer> label=tran.getLabel();
-			int to=tran.getRHS();
+			States from=tran.getBottom();
+			Label label=tran.getLabel();
+			int to=tran.getTop();
 			String label_prettyprint="[ ";
 			for(int sublabel:label){
 				if(sublabel==-1)
@@ -395,31 +374,5 @@ public class TreeAutomaton{
 		return true;
 	}
 
-	private ArrayList<Integer> mergeFromLabel(ArrayList<Integer> from, SortedList<Integer> label) throws Exception{
-		ArrayList<Integer> from_label=new ArrayList<Integer>();
-		int fromIndex=0;
-		for(int sublabel:label){
-			if(!rank.containsKey(sublabel)){
-				throw new Exception("Insert a new transition with unknown sublabel "+sublabel);
-			}
-			from_label.add(sublabel);
-			from_label.addAll(from.subList(fromIndex, fromIndex+rank.get(sublabel)));
-			fromIndex+=rank.get(sublabel);
-		}
-		return from_label;
-	}
-
-	private Pair<ArrayList<Integer>, SortedList<Integer>> separateFromLabel(ArrayList<Integer> from_label){
-		ArrayList<Integer> from=new ArrayList<Integer>();
-		SortedList<Integer> label=new SortedList<Integer>();
-		int subLabelIndex=0;
-		while(subLabelIndex<from_label.size()){
-			int sublabel=from_label.get(subLabelIndex);
-			label.add(sublabel);
-			from.addAll(from_label.subList(subLabelIndex+1, subLabelIndex+1+rank.get(sublabel)));
-			subLabelIndex+=(rank.get(sublabel)+1);
-		}
-		return new Pair<ArrayList<Integer>, SortedList<Integer>>(from,label);
-	}	
 
 }

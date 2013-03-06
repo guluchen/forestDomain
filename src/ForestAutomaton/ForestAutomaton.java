@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import TreeAutomaton.Label;
 import TreeAutomaton.Transition;
 import TreeAutomaton.TreeAutomaton;
 import Util.Pair;
@@ -80,8 +81,8 @@ public class ForestAutomaton {
     	addTreeAutomata(n);
 
 
-    	SortedList<Integer> label=new SortedList<Integer>();
-    	SortedList<Integer> label_to_undef=new SortedList<Integer>();
+    	Label label=new Label();
+    	Label label_to_undef=new Label();
     	label_to_undef.add(-UNDEF);
     	ArrayList<Integer> refs_to_undef=new ArrayList<Integer>();
     	for(String selector:type){
@@ -91,9 +92,9 @@ public class ForestAutomaton {
     		label.add(symNum.get(selector));
     		refs_to_undef.add(TreeAutomaton.getNewNodeNumber());
     	}
-    	n.addTrans(refs_to_undef, label, newNodeNumber);
+    	n.addTrans(new Transition(refs_to_undef, label, newNodeNumber));
     	for(int ref:refs_to_undef)
-        	n.addTrans(new ArrayList<Integer>(), label_to_undef, ref);
+        	n.addTrans(new Transition(new ArrayList<Integer>(), label_to_undef, ref));
     	ret.add(this);
     	return ret;
     }
@@ -124,7 +125,7 @@ public class ForestAutomaton {
 				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
-				ArrayList<Integer> LHS=tran.getLHS();
+				ArrayList<Integer> LHS=tran.getBottom();
 				SortedList<Integer> label=tran.getLabel();
 				if(!label.contains(symNum.get(z))){
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
@@ -132,11 +133,11 @@ public class ForestAutomaton {
 					ta.delTrans(tran);
 					int new_z_ref=TreeAutomaton.getNewNodeNumber();
 					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
-					ta.addTrans(LHS, label, tgtNode);
+					ta.addTrans(new Transition(LHS, label, tgtNode));
 					
 					SortedList<Integer> nullRef=new SortedList<Integer>();
 					nullRef.add(-NULL);
-					ta.addTrans(new ArrayList<Integer>(),nullRef,new_z_ref);
+					ta.addTrans(new Transition(new ArrayList<Integer>(),nullRef,new_z_ref));
 				}
 				ret.add(fa);
 			}
@@ -170,7 +171,7 @@ public class ForestAutomaton {
 				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
-				ArrayList<Integer> LHS=tran.getLHS();
+				ArrayList<Integer> LHS=tran.getBottom();
 				SortedList<Integer> label=tran.getLabel();
 				if(!label.contains(symNum.get(z))){
 					throw new Exception("Error: "+x+" does not have the selector "+z+"\n");
@@ -178,12 +179,12 @@ public class ForestAutomaton {
 					ta.delTrans(tran);
 					int new_z_ref=TreeAutomaton.getNewNodeNumber();
 					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
-					ta.addTrans(LHS, label, tgtNode);
+					ta.addTrans(new Transition(LHS, label, tgtNode));
 					
 					SortedList<Integer> ref=new SortedList<Integer>();
 					ref.add(-pointers.get(y));
 					ta.addSubLabel(-pointers.get(y), 0);
-					ta.addTrans(new ArrayList<Integer>(),ref,new_z_ref);
+					ta.addTrans(new Transition(new ArrayList<Integer>(),ref,new_z_ref));
 				}
 				ret.add(fa);
 			}
@@ -207,7 +208,7 @@ public class ForestAutomaton {
 				TreeAutomaton ta=fa.getTreeAutomataWithRoot(tgtNode);
 				assert ta.getTransTo(tgtNode).size()==1;
 				Transition tran=getFirst(ta.getTransTo(tgtNode));
-				ArrayList<Integer> LHS=tran.getLHS();
+				ArrayList<Integer> LHS=tran.getBottom();
 				SortedList<Integer> label=tran.getLabel();
 				 
 				if(!label.contains(symNum.get(z))){
@@ -219,12 +220,12 @@ public class ForestAutomaton {
 						ta.delTrans(tran);
 						int new_x_ref=TreeAutomaton.getNewNodeNumber();
 						LHS.set(ta.getStartLoc(label, symNum.get(z)), new_x_ref);
-						ta.addTrans(LHS, label, tgtNode);
+						ta.addTrans(new Transition(LHS, label, tgtNode));
 
 						for(Transition tran_to_x:ta.getTransTo(x_ref)){
-							ArrayList<Integer> from_x=tran_to_x.getLHS();
+							ArrayList<Integer> from_x=tran_to_x.getBottom();
 							SortedList<Integer> label_x=tran_to_x.getLabel();
-							ta.addTrans(new ArrayList<Integer>(from_x), new SortedList<Integer>(label_x), new_x_ref);
+							ta.addTrans(new Transition(new ArrayList<Integer>(from_x), new SortedList<Integer>(label_x), new_x_ref));
 						}
 						TreeAutomaton ta_x=split(ta, new_x_ref);
 						fa.pointers.put(x, ta_x.getFinal());
@@ -312,7 +313,7 @@ public class ForestAutomaton {
     	
 		for(Pair<TreeAutomaton,Transition> ta_tran:getBackwardBoxTransWithRefOnLHS(tgtNode,this)){
 			
-			TreeAutomaton cta=split(ta_tran.getFirst(), ta_tran.getSecond().getRHS());
+			TreeAutomaton cta=split(ta_tran.getFirst(), ta_tran.getSecond().getTop());
 			toAdd.add(cta);
 	    	rootsToLift.add(cta.getFinal());
 		}
@@ -327,7 +328,7 @@ public class ForestAutomaton {
         		if(ta.isReferenceTo(s, root))
         			for(Transition tran:ta.getTransFrom(s)){
         				SortedList<Integer> label=tran.getLabel();
-        				ArrayList<Integer> from=tran.getLHS();
+        				ArrayList<Integer> from=tran.getBottom();
         				int startLoc=0;
         				check_backtran:
         				for(int i=0;i<label.size();i++){
@@ -355,11 +356,11 @@ public class ForestAutomaton {
 	    	HashMap<Integer,Integer> stMapping=new HashMap<Integer,Integer>();
 			for(int s:box.getStates()){
 				if(s==box.inPort){
-					stMapping.put(s, tran.getRHS());
+					stMapping.put(s, tran.getTop());
 				}else if(box.outPorts.contains(s)){
 					int i=box.outPorts.indexOf(s);
 					int startPositionOfSublabel=ta.getStartLoc(tran.getLabel(), sublabel);
-					int rootReferenceState=tran.getLHS().get(startPositionOfSublabel+i);
+					int rootReferenceState=tran.getBottom().get(startPositionOfSublabel+i);
 					int rootRef=ta.referenceTo(rootReferenceState);
 					assert rootRef!=-1;
 					stMapping.put(s, rootRef);
@@ -369,7 +370,7 @@ public class ForestAutomaton {
 	    	tran=ta.removeSubTransition(tran, sublabel);
 			Box boxFA=new Box(boxes.get(sublabel),stMapping);
 			//inport
-			attachTA(ta, boxFA.getTreeAutomataWithRoot(tran.getRHS()));
+			attachTA(ta, boxFA.getTreeAutomataWithRoot(tran.getTop()));
 			//outports
 			for(int o:boxFA.outPorts)
 				attachTA(fa.getTreeAutomataWithRoot(o), boxFA.getTreeAutomataWithRoot(o));
@@ -390,7 +391,7 @@ public class ForestAutomaton {
 		Transition oriTran=getFirst(oriTa.getTransTo(root));
 		
 		for(Transition boxTran:boxTa.getTrans()){
-			if(boxTran.getRHS()==root){
+			if(boxTran.getTop()==root){
 				oriTa.addSubTransition(oriTran, boxTa.getRankMapping(), boxTran);
 			}else
 				oriTa.addTrans(boxTran);
@@ -413,7 +414,7 @@ public class ForestAutomaton {
     	SortedList<Integer> portLabel=new SortedList<Integer>();
     	portLabel.add(-newSt.get(to));
     	ta.addSubLabel(-newSt.get(to), 0);
-    	ta.addTrans(new ArrayList<Integer>(), portLabel, to);
+    	ta.addTrans(new Transition(new ArrayList<Integer>(), portLabel, to));
 		
 		return ret;
 	}  
@@ -430,9 +431,9 @@ public class ForestAutomaton {
     		assert finalTrans.size()==1;
     		Transition finalTran=getFirst(finalTrans);
     		
-    		ArrayList<Integer> lhs=finalTran.getLHS();
+    		ArrayList<Integer> lhs=finalTran.getBottom();
     		SortedList<Integer> label=finalTran.getLabel();
-    		int rhs=finalTran.getRHS();
+    		int rhs=finalTran.getTop();
     		
     		srcTA.delTrans(finalTran);
     		ArrayList<Integer> newfrom=new ArrayList<Integer>(lhs);
@@ -450,9 +451,9 @@ public class ForestAutomaton {
     			SortedList<Integer> reflabel=new SortedList<Integer>();
     			reflabel.add(-Ai.getFinal());
     			srcTA.addSubLabel(-Ai.getFinal(), 0);
-        		srcTA.addTrans(new ArrayList<Integer>(), reflabel, newfrom.get(i));
+        		srcTA.addTrans(new Transition(new ArrayList<Integer>(), reflabel, newfrom.get(i)));
     		}
-    		srcTA.addTrans(newfrom, label, rhs);
+    		srcTA.addTrans(new Transition(newfrom, label, rhs));
     	}
 		if(rootsToLift.size()!=0)
 			return finalRuleLHSToTA(rootsToLift, ret);
@@ -484,9 +485,9 @@ public class ForestAutomaton {
     private void unwindTA_fromRoot(TreeAutomaton srcTA) throws Exception {
 		int newRoot=TreeAutomaton.getNewNodeNumber();
 		for(Transition finalTran:srcTA.getTransTo(srcTA.getFinal())){
-			ArrayList<Integer> from=finalTran.getLHS();
+			ArrayList<Integer> from=finalTran.getBottom();
 			SortedList<Integer> label=finalTran.getLabel();
-			srcTA.addTrans(new ArrayList<Integer>(from), new SortedList<Integer>(label), newRoot);
+			srcTA.addTrans(new Transition(new ArrayList<Integer>(from), new SortedList<Integer>(label), newRoot));
 		}
 		int oriRoot=srcTA.getFinal();
 		srcTA.swapNamesOfStates(newRoot, oriRoot);
