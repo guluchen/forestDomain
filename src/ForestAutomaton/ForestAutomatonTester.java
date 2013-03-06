@@ -10,13 +10,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import TreeAutomaton.TreeAutomata;
+import TreeAutomaton.TreeAutomaton;
 import Util.SortedList;
 
-public class ForestAutomataTest {
-	private ForestAutomata fa;
+public class ForestAutomatonTester {
+	private ForestAutomaton fa;
 	private static ArrayList<String> DLL;
-	private HashSet<ForestAutomata> cur;
+	private HashSet<ForestAutomaton> cur;
 	private static Box dll;
 
 	@BeforeClass
@@ -26,16 +26,16 @@ public class ForestAutomataTest {
 		DLL.add("prev");
 		
 		dll=new Box();
-		TreeAutomata ta1=new TreeAutomata();
-		TreeAutomata ta2=new TreeAutomata();
-		int s1=TreeAutomata.getNewNodeNumber();
-		int s2=TreeAutomata.getNewNodeNumber();
-		int s3=TreeAutomata.getNewNodeNumber();
-		int s4=TreeAutomata.getNewNodeNumber();
-		int n=TreeAutomata.getNewSymNumber();
-		int p=TreeAutomata.getNewSymNumber();
-		ForestAutomata.setSymbolMap("next", n);
-		ForestAutomata.setSymbolMap("prev", p);
+		TreeAutomaton ta1=new TreeAutomaton();
+		TreeAutomaton ta2=new TreeAutomaton();
+		int s1=TreeAutomaton.getNewNodeNumber();
+		int s2=TreeAutomaton.getNewNodeNumber();
+		int s3=TreeAutomaton.getNewNodeNumber();
+		int s4=TreeAutomaton.getNewNodeNumber();
+		int n=TreeAutomaton.getNewSymNumber();
+		int p=TreeAutomaton.getNewSymNumber();
+		ForestAutomaton.setSymbolMap("next", n);
+		ForestAutomaton.setSymbolMap("prev", p);
 		
 		ta1.setFinal(s1);
 		ta1.addSubLabel(n, 1);
@@ -74,8 +74,8 @@ public class ForestAutomataTest {
 	}
 	@Before
 	public void setUp() throws Exception {
-		fa=new ForestAutomata();
-		ForestAutomata.addBox(dll, "dll");
+		fa=new ForestAutomaton();
+		ForestAutomaton.addBox(dll, "dll");
 	}
 	@After
 	public void tearDown() throws Exception {
@@ -94,8 +94,8 @@ public class ForestAutomataTest {
 	public void testNewNode_x() {
 		try {
 			cur=fa.assignNull("x");
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.newNode("x",DLL));
 			}
 			cur=sfa_new;
@@ -108,8 +108,8 @@ public class ForestAutomataTest {
 	public void testAssign_x_y() {
 		try {
 			cur=fa.assignNull("x");
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.assign("y", "x"));
 			}
 			cur=sfa_new;
@@ -123,8 +123,8 @@ public class ForestAutomataTest {
 	public void testAssignNull_x_z() {
 		try {
 			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.assignNull("x", "next"));
 			}
 
@@ -137,13 +137,13 @@ public class ForestAutomataTest {
 	public void testAssignLeftPointer_x_z_y() {
 		try {
 			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.newNode("y",DLL));
 			}
 			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.assignLeftPointer("x", "next","y"));
 			}
 			cur=sfa_new;
@@ -157,13 +157,13 @@ public class ForestAutomataTest {
 	public void testAssignRightPointer_x_y_z() {
 		try {
 			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.newNode("y",DLL));
 			}
 			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.assignRightPointer("x", "y","next"));
 			}
 			cur=sfa_new;
@@ -177,23 +177,23 @@ public class ForestAutomataTest {
 	public void testFormADLLCell() {
 		try {
 			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.newNode("y",DLL));
 			}
 			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.assignLeftPointer("x", "next","y"));
 			}
 			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomata>();
-			for(ForestAutomata fa: cur){
+			sfa_new=new HashSet<ForestAutomaton>();
+			for(ForestAutomaton fa: cur){
 				sfa_new.addAll(fa.assignLeftPointer("y", "prev","x"));
 			}
 
 			cur=sfa_new;
-			for(ForestAutomata fa: cur){
+			for(ForestAutomaton fa: cur){
 				System.out.println("===============");
 				System.out.println(fa.toString());
 			}
@@ -208,25 +208,25 @@ public class ForestAutomataTest {
 	public void testCreateADLLofArbitaryLength() {
 		try {
 
-			TreeAutomata ta_X=new TreeAutomata();
-			TreeAutomata ta_I=new TreeAutomata();
-			TreeAutomata ta_Y=new TreeAutomata();
-			int s1=TreeAutomata.getNewNodeNumber();
-			int s2=TreeAutomata.getNewNodeNumber();
-			int s3=TreeAutomata.getNewNodeNumber();
-			int s4=TreeAutomata.getNewNodeNumber();
-			int s5=TreeAutomata.getNewNodeNumber();
-			int s6=TreeAutomata.getNewNodeNumber();
-			int s7=TreeAutomata.getNewNodeNumber();
-			int s8=TreeAutomata.getNewNodeNumber();
+			TreeAutomaton ta_X=new TreeAutomaton();
+			TreeAutomaton ta_I=new TreeAutomaton();
+			TreeAutomaton ta_Y=new TreeAutomaton();
+			int s1=TreeAutomaton.getNewNodeNumber();
+			int s2=TreeAutomaton.getNewNodeNumber();
+			int s3=TreeAutomaton.getNewNodeNumber();
+			int s4=TreeAutomaton.getNewNodeNumber();
+			int s5=TreeAutomaton.getNewNodeNumber();
+			int s6=TreeAutomaton.getNewNodeNumber();
+			int s7=TreeAutomaton.getNewNodeNumber();
+			int s8=TreeAutomaton.getNewNodeNumber();
 
-			int n=ForestAutomata.getSymbolMap("next");
-			int p=ForestAutomata.getSymbolMap("prev");
-			int dll=ForestAutomata.getSymbolMap("dll");
+			int n=ForestAutomaton.getSymbolMap("next");
+			int p=ForestAutomaton.getSymbolMap("prev");
+			int dll=ForestAutomaton.getSymbolMap("dll");
 
 			ta_X.setFinal(s1);
 			ta_X.addSubLabel(n, 1);
-			ta_X.addSubLabel(-ForestAutomata.NULL, 0);
+			ta_X.addSubLabel(-ForestAutomaton.NULL, 0);
 			//([2])-[next]->1
 			SortedList<Integer> label_s1_s2=new SortedList<Integer>();
 			label_s1_s2.add(n);
@@ -235,7 +235,7 @@ public class ForestAutomataTest {
 			ta_X.addTrans(lhs_s2, label_s1_s2, s1);
 			//([])-[NULL]->2
 			SortedList<Integer> nullRef=new SortedList<Integer>();
-			nullRef.add(-ForestAutomata.NULL);
+			nullRef.add(-ForestAutomaton.NULL);
 			ta_X.addTrans(new ArrayList<Integer>(), nullRef, s2);
 
 			ta_I.setFinal(s3);
@@ -289,7 +289,7 @@ public class ForestAutomataTest {
 			
 			System.out.println(fa);
 			
-			HashSet<ForestAutomata> sfa_new=new HashSet<ForestAutomata>();
+			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
 			sfa_new.addAll(fa.assignRightPointer("x","x","prev"));
 			
 			
@@ -310,7 +310,7 @@ public class ForestAutomataTest {
 //			}
 
 			cur=sfa_new;
-			for(ForestAutomata fa: cur){
+			for(ForestAutomaton fa: cur){
 				System.out.println("===============");
 				System.out.println(fa.toString());
 			}

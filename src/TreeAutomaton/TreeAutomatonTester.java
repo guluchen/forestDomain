@@ -10,12 +10,12 @@ import org.junit.Test;
 
 import Util.SortedList;
 
-public class TreeAutomataTest {
-	private TreeAutomata t;
+public class TreeAutomatonTester {
+	private TreeAutomaton t;
 	@SuppressWarnings("serial")
 	@Before
 	public void setUp() throws Exception {
-		t=new TreeAutomata();
+		t=new TreeAutomaton();
     	
     	t.setFinal(1);
     	t.addSubLabel(1, 2);
