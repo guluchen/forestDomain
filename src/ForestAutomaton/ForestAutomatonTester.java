@@ -84,151 +84,125 @@ public class ForestAutomatonTester {
 	public void tearDown() throws Exception {
 	}
 
-	@Test
-	public void testAssignNull_x() {
-		try {
-			cur=fa.assignNull("x");
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-	@Test
-	public void testNewNode_x() {
-		try {
-			cur=fa.assignNull("x");
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.newNode("x",DLL));
-			}
-			cur=sfa_new;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-	@Test
-	public void testAssign_x_y() {
-		try {
-			cur=fa.assignNull("x");
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.assign("y", "x"));
-			}
-			cur=sfa_new;
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testUnfold() {
-		try {
-			cur=fa.newNode("x",DLL);
+//	@Test
+//	public void testAssignNull_x() {
+//		try {
+//			cur=fa.assignNull("x");
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
+//	@Test
+//	public void testNewNode_x() {
+//		try {
+//			cur=fa.assignNull("x");
+//			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
 //			for(ForestAutomaton fa: cur){
-//				System.out.println("===============");
-//				System.out.println(fa.toString());
+//				sfa_new.addAll(fa.newNode("x",DLL));
 //			}
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.unfold(fa.pointers.get("x")));
-			}
 //			cur=sfa_new;
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
+//	@Test
+//	public void testAssign_x_y() {
+//		try {
+//			cur=fa.assignNull("x");
+//			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
 //			for(ForestAutomaton fa: cur){
-//				System.out.println("===============");
-//				System.out.println(fa.toString());
+//				sfa_new.addAll(fa.assign("y", "x"));
 //			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-	
-	@Test
-	public void testAssignNull_x_z() {
-		try {
-			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.assignNull("x", "next"));
-			}
- 
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-	@Test
-	public void testAssignLeftPointer_x_z_y() {
-		try {
-			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.newNode("y",DLL));
-			}
-			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.assignLeftPointer("x", "next","y"));
-			}
-			cur=sfa_new;
-				
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-	@Test
-	public void testAssignRightPointer_x_y_z() {
-		try {
-			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.newNode("y",DLL));
-			}
-			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.assignRightPointer("x", "y","next"));
-			}
-			cur=sfa_new;
-				
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-	@Test
-	public void testFormADLLCell() {
-		try {
-			cur=fa.newNode("x",DLL);
-			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.newNode("y",DLL));
-			}
-			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.assignLeftPointer("x", "next","y"));
-			}
-			cur=sfa_new;
-			sfa_new=new HashSet<ForestAutomaton>();
-			for(ForestAutomaton fa: cur){
-				sfa_new.addAll(fa.assignLeftPointer("y", "prev","x"));
-			}
-
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
+//			cur=sfa_new;
+//			
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
+//
+//
+//	
+//	@Test
+//	public void testAssignNull_x_z() {
+//		try {
+//			cur=fa.newNode("x",DLL);
+//			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.assignNull("x", "next"));
+//			}
+// 
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
+//	@Test
+//	public void testAssignLeftPointer_x_z_y() {
+//		try {
+//			cur=fa.newNode("x",DLL);
+//			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.newNode("y",DLL));
+//			}
+//			cur=sfa_new;
+//			sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.assignLeftPointer("x", "next","y"));
+//			}
+//			cur=sfa_new;
+//				
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
+//	@Test
+//	public void testAssignRightPointer_x_y_z() {
+//		try {
+//			cur=fa.newNode("y",DLL);
+//			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+//			sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.assignRightPointer("x", "y","next"));
+//			}
+//			cur=sfa_new;
+//				
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
+//	@Test
+//	public void testFormADLLCell() {
+//		try {
+//			cur=fa.newNode("x",DLL);
+//			HashSet<ForestAutomaton> sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.newNode("y",DLL));
+//			}
+//			cur=sfa_new;
+//			sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.assignLeftPointer("x", "next","y"));
+//			}
+//			cur=sfa_new;
+//			sfa_new=new HashSet<ForestAutomaton>();
+//			for(ForestAutomaton fa: cur){
+//				sfa_new.addAll(fa.assignLeftPointer("y", "prev","x"));
+//			}
+//
+//			
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			fail(e.getMessage());
+//		}
+//	}
 
 	@Test
 	public void testCreateADLLofArbitaryLength() {
@@ -336,6 +310,7 @@ public class ForestAutomatonTester {
 
 			cur=sfa_new;
 			for(ForestAutomaton fa: cur){
+				fa.removeDeadTransitions();
 				System.out.println("===============");
 				System.out.println(fa.toString());
 			}

@@ -2,8 +2,6 @@ package TreeAutomaton;
 
 import java.util.HashSet;
 
-import Util.SortedList;
-
 public class Term {
 	Label label;
 	States bottom;
@@ -43,6 +41,14 @@ public class Term {
 		}
 		return ret;
 	}
+	
+	public void addSubTerm(SubTerm st) throws Exception{
+		label.add(st.getSubLabel(), st.getStates().size());
+		int startLoc=label.indexOf(st.getSubLabel());
+		for(int i=0;i<st.getStates().size();i++){
+			bottom.add(startLoc+i, st.getStates().get(i));
+		}
+	}	
     public int hashCode() {
     	int hashFirst = bottom != null ? bottom.hashCode() : 0;
     	int hashSecond = label != null ? label.hashCode() : 0;
