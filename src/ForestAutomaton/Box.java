@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import TreeAutomaton.Transition;
+import TreeAutomaton.TreeAutomaton;
 import Util.ManyToMany;
 
 public class Box extends ForestAutomaton{
@@ -21,6 +23,9 @@ public class Box extends ForestAutomaton{
 	}
 	public void setPortConnections(int from, int to){
 		this.portConnections.put(from, to);
+	}
+	public boolean checkPortConnections(int from, int to){
+		return portConnections.rightSetFromLeftKey(from).contains(to);
 	}
 	public Box(){
 		super();
@@ -49,11 +54,15 @@ public class Box extends ForestAutomaton{
 	    }		
 	}	
 	
-	HashSet<Integer> getBackPorts(){
+	HashSet<Integer> getBackPorts(int selectorNum){
 		HashSet<Integer> ret=new HashSet<Integer>();
-		for(int i=0;i<outPorts.size();i++)
-			if(portConnections.leftSetFromRightKey(outPorts.get(i)).contains(inPort))
-				ret.add(i);
+		for(int i=0;i<outPorts.size();i++){
+			TreeAutomaton out_i=getTreeAutomataWithRoot(outPorts.get(i));
+			for(Transition tran:out_i.getTransTo(out_i.getFinal())){
+				if(tran.getLabel().contains(selectorNum))
+					ret.add(i);
+			}
+		}
 		return ret;
 	}
 	

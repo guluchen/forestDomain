@@ -9,14 +9,15 @@ import java.util.HashSet;
 import java.util.Set;
 import ForestAutomaton.ForestAutomaton;
 import Util.ManyToMany;
+import Util.Pair;
 
 public class TreeAutomaton{
 
 
 	static private int freshNodeNum=3;//state 1,2 are reserved for the roots of the null and undef TAs, resp.
 	static private int freshSymNum=1;	
-	private HashMap<Integer,Integer> rank=new HashMap<Integer,Integer>();
-	private ManyToMany<Term, Integer> trans=new ManyToMany<Term, Integer>();	
+	private HashMap<Integer,Integer> rank;
+	private ManyToMany<Term, Integer> trans;	
 	private int finalSt;
 	private HashSet<Integer> states;
 	//Constructors
@@ -35,19 +36,29 @@ public class TreeAutomaton{
 	}
 
 	public TreeAutomaton(TreeAutomaton c, HashMap<Integer, Integer> stMapping) throws Exception {
-		stMapping.put(1, 1);//for the final of null
-		stMapping.put(2, 2);//for the final of undef
 		rank=new HashMap<Integer,Integer>(c.rank);
 		trans=new ManyToMany<Term, Integer>();
+		
 		for(int top:c.trans.rightKeySet()){
 			for(Term term:c.trans.leftSetFromRightKey(top)){
-				States bottom=term.getStates();
-				Label label=term.label;
-				States new_bottom=new States(term.getStates());
-				for(int i=0;i<bottom.size();i++){
-					new_bottom.set(i, stMapping.get(bottom.get(i)));
+				Term newTerm=new Term();
+				for(SubTerm st:term.getSubTerms()){
+					int sublabel;
+					if(stMapping.get(-st.getSubLabel())!=null){
+						if(st.getSubLabel()<0)
+							sublabel=-stMapping.get(-st.getSubLabel());
+						else
+							sublabel=stMapping.get(st.getSubLabel());
+					}else{
+						sublabel=st.getSubLabel();
+					}
+					States new_bottom=new States(term.getStates());
+					for(int i=0;i<term.getStates().size();i++){
+						new_bottom.set(i, stMapping.get(term.getStates().get(i)));
+					}
+					newTerm.addSubTerm(new SubTerm(sublabel,new_bottom));
 				}
-				trans.put(new Term(label,new_bottom), stMapping.get(top));
+				trans.put(newTerm, stMapping.get(top));
 			}
 
 		}
@@ -105,6 +116,14 @@ public class TreeAutomaton{
 	public HashSet<Integer> getStates(){
 		return states;
 	}
+	public void removeState(Integer s) throws Exception{
+		states.remove(s);
+		for(Transition tran:getTransFrom(s))
+			delTrans(tran);
+		for(Transition tran:getTransTo(s))
+			delTrans(tran);
+	}
+
 	public boolean isState(Integer s) {
 		return states.contains(s);
 	}
@@ -135,7 +154,7 @@ public class TreeAutomaton{
 				Label label=tran.getLabel();
 				if(label.size()!=1)
 					return -1;
-				else if(label.iterator().next()>0)
+				else if(label.iterator().next()>-3)
 					return -1;
 				else
 					return -label.iterator().next();
@@ -308,45 +327,48 @@ public class TreeAutomaton{
 		setFinal(oriRoot);
 	}
 
-	//Unwind the TA from a given leaf state l. The tree language and the leaf 
-    //state are remain unchanged after this operation. A state p is the "parent 
-    //state" of the given leaf state l iff there exists a TA transition with p 
-    //as its top state and l in its bottom states. For each tree accepted by 
-    //the TA, the each occurrence of l is immediately preceded by an occurrence 
-    //of its parent state and vice versa. In case that some parent state of l 
-    //is the final state, the function return a TA c such that
-    //L(c) U L(ta after the function) = L(ta before the function), otherwise, 
-    //it returns null
-    public TreeAutomaton unwindTA_fromLeaf(int l) throws Exception {
-    	TreeAutomaton ret=null;
-    	int new_final=0;
-    	for(Transition tran:getTransFrom(l)){
-			int new_top=TreeAutomaton.getNewNodeNumber();
-			int top=tran.getTop();
-			States bottom=tran.getBottom();
-			Label label=tran.getLabel();
-			addTrans(new Transition(new States(bottom), new Label(label), new_top));
-			delTrans(new Transition(new States(bottom), new Label(label), top));
-			for(Transition tran2:getTransFrom(top)){
-				int top2=tran2.getTop();
-				States bottom2=new States(tran2.getBottom());
-				Label label2=new Label(tran2.getLabel());
-				//replace all occurrences of top in bottom2 with new_top
-				for(int i=0;i<bottom2.size();i++){
-					if(bottom2.get(i)==top)
-						bottom2.set(i, new_top);
-				}
-				addTrans(new Transition(bottom2, label2, top2));
-			}	
-			if(top==getFinal()) new_final=new_top;
+	//Unwind the TA from a given leaf state l. The tree language, the leaf 
+    //state, and final state are remain unchanged after this operation. 
+    //NOTICE:this function makes use of several assumptions on the input
+    //1. state l is a leaf state
+    //2. For every run of the tree automata, the label of the transition tran
+    //   followed by the state referenced by l appears at most once 
+    //Then this function guarantees that the top state of tran (renamed to 
+    //the return value ret) appears at most once at all trees accepted by this TA.
+    public HashSet<Pair<Integer,TreeAutomaton>> unwindTA_fromLeaf(Transition tran, int l) throws Exception {
+    	HashSet<Pair<Integer,TreeAutomaton>> ret=new HashSet<Pair<Integer,TreeAutomaton>>();
+
+    	int new_top=TreeAutomaton.getNewNodeNumber();
+		int top=tran.getTop();
+		States bottom=tran.getBottom();
+
+		Label label=tran.getLabel();
+		addTrans(new Transition(new States(bottom), new Label(label), new_top));
+		delTrans(new Transition(new States(bottom), new Label(label), top));
+		for(Transition tran2:getTransFrom(top)){
+			int top2=tran2.getTop();
+			States bottom2=new States(tran2.getBottom());
+			Label label2=new Label(tran2.getLabel());
+			//replace all occurrences of top in bottom2 with new_top
+			for(int i=0;i<bottom2.size();i++){
+				if(bottom2.get(i)==top)
+					bottom2.set(i, new_top);
+			}
+			addTrans(new Transition(bottom2, label2, top2));
 		}
-    	if(new_final!=0){//handle special case when some parent state of l is a final state
-    		ret=new TreeAutomaton(this);
-    		ret.setFinal(new_final);
-    		ret.swapNamesOfStates(new_final, getFinal());
-    	}
+		
+		ret.add(new Pair<Integer,TreeAutomaton>(new_top, this));
+		if(top==this.getFinal()){
+			TreeAutomaton new_ta=new TreeAutomaton(this);
+			new_ta.setFinal(new_top);
+			ret.add(new Pair<Integer,TreeAutomaton>(new_top, new_ta));
+		}
+		
     	return ret;
     }
+    
+
+    
     
     
 	static public int getNewNodeNumber(){//Node -> State everywhere?
