@@ -20,7 +20,9 @@ public class ForestAutomaton {
 	final static int NULL=1;
 	final static int UNDEF=2;
 	
+	//a sub label is a string and it has a unique number
 	static HashMap<String, Integer> symNum=new HashMap<String, Integer>();
+	//some sublables (their numbers) are boxes
 	static HashMap<Integer, Box> boxes=new HashMap<Integer, Box>();
 	static public void addBox(Box b, String selector){
 		if(symNum.get(selector)==null)
@@ -28,9 +30,11 @@ public class ForestAutomaton {
     	boxes.put(symNum.get(selector),b);
 	}
 	
+	//a type has a name and it is a set of sublables (selectors)
 	static HashMap<String, ArrayList<String>> varType=new HashMap<String, ArrayList<String>>();
 
 	ArrayList<TreeAutomaton> lt;
+	//pointers (program variables) are mapped to the root states  
 	HashMap<String,Integer> pointers;
 	static public void setSymbolMap(String sym, int number){
 		symNum.put(sym, number);
@@ -65,9 +69,7 @@ public class ForestAutomaton {
 	    for(Entry<String, Integer> e:c.pointers.entrySet()){
 	    	pointers.put(e.getKey(), stMapping.get(e.getValue()));
 	    }
-	}	
-	
-	
+	}		
 	
 	//program operations (transformers)
     public HashSet<ForestAutomaton> newNode(String x, ArrayList<String> type) throws Exception {//add a new tree automata to all forest automata
@@ -76,7 +78,7 @@ public class ForestAutomaton {
     	varType.put(x, type);
     	
     	TreeAutomaton n=new TreeAutomaton();
-    	int newNodeNumber=TreeAutomaton.getNewNodeNumber();
+    	int newNodeNumber=TreeAutomaton.getNewNodeNumber();//TODO node -> state
     	pointers.put(x, newNodeNumber);
     	n.setFinal(newNodeNumber);
     	addTreeAutomata(n);
@@ -91,12 +93,12 @@ public class ForestAutomaton {
     			symNum.put(selector, TreeAutomaton.getNewSymNumber());
     		n.addSubLabel(symNum.get(selector), 1);
     		label.add(symNum.get(selector),1);
-    		refs_to_undef.add(TreeAutomaton.getNewNodeNumber());
+    		refs_to_undef.add(TreeAutomaton.getNewNodeNumber());//TODO maybe it could be just one state common for all new refs to undef (created outside the for loop)
     	}
     	n.addTrans(new Transition(refs_to_undef, label, newNodeNumber));
     	for(int ref:refs_to_undef)
         	n.addTrans(new Transition(new States(), label_to_undef, ref));
-    	if(removeDeadTransitions()){
+    	if(removeDeadTransitions()){//assumes that there are no useless states
     		throw new Exception("Error: a memory leak detected on "+x+" = malloc()\n");
     	}
     	ret.add(this);
@@ -123,13 +125,13 @@ public class ForestAutomaton {
     	return ret;
     }
 
-    //x->z = null
+    //x->z = null //TODO some different names for selectors, 'z' looks like a variable 
     public HashSet<ForestAutomaton> assignNull(String x, String z) throws Exception {
     	removeDeadTransitions();
     	int tgtNode=pointers.get(x);
     	TreeAutomaton ta_x=this.getTreeAutomataWithRoot(tgtNode);
     	if(ta_x==null){
-    		throw new Exception("Error: variable "+x+" == null\n");
+    		throw new Exception("Error: variable "+x+" == null\n");//TODO change the error message
     	}
 		HashSet<ForestAutomaton> ret=new HashSet<ForestAutomaton>();
 		for(ForestAutomaton fa_:unfold(tgtNode,z)){
@@ -147,15 +149,16 @@ public class ForestAutomaton {
 				}else{
 					ta.delTrans(tran);
 					int new_z_ref=TreeAutomaton.getNewNodeNumber();
-					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);
+					LHS.set(ta.getStartLoc(label, symNum.get(z)), new_z_ref);//TODO Prepare a new shirt, sweating too much
 					ta.addTrans(new Transition(LHS, label, tgtNode));
 					
 					Label nullRef=new Label();
 					nullRef.add(-NULL,0);
 					ta.addTrans(new Transition(new States(),nullRef,new_z_ref));
+					//TODO States() are ordered ... What about creating class State (one)?
 				}
 		    
-		    	if(fa.removeDeadTransitions()){
+		    	if(fa.removeDeadTransitions()){//assumes that there are no useless states
 		    		throw new Exception("Error: a memory leak detected on an assignment to "+x+"->"+z+"\n");
 		    	}
 		    	ret.add(fa);
@@ -328,8 +331,10 @@ public class ForestAutomaton {
     	return canReach;
     }
     
+    //Dead = unreachable from the input port. Removes also dead states.
+    //if there are not useless states, then returns true iff there is a garbage
     public boolean removeDeadTransitions() throws Exception{
-    	ArrayList<Integer> st=new ArrayList<Integer>(getStates());
+    	ArrayList<Integer> st=new ArrayList<Integer>(getStates());//st fixes some arbitrary order of states
     	boolean [][] canReach=buildConnectionMatrix(st);
 
     	//collect reachable states
@@ -345,7 +350,7 @@ public class ForestAutomaton {
     				worklist.push(i);
     	}
     	//remove unreachable states
-    	boolean hasUnreachableStates=false;
+    	boolean hasUnreachableNonReferenceStates=false;//might still be a useless state
     	for(TreeAutomaton ta:lt){
         	HashSet<Integer> toRemove=new HashSet<Integer>();
     		for(int s:ta.getStates())
@@ -354,11 +359,11 @@ public class ForestAutomaton {
     			}
         	for(int s:toRemove){
 				if(!ta.isReferenceTo(s, NULL)&&!ta.isReferenceTo(s, UNDEF)&&ta.referenceTo(s)==-1)
-					hasUnreachableStates=true;
+					hasUnreachableNonReferenceStates=true;
     			ta.removeState(s);
         	}
     	}
-    	return hasUnreachableStates;
+    	return hasUnreachableNonReferenceStates;
     }
     
     public HashSet<ForestAutomaton> unfold(int tgtNode, String z) throws Exception{

@@ -12,6 +12,7 @@ public class Box extends ForestAutomaton{
     //for boxes only
 	int inPort;
 	ArrayList<Integer> outPorts;
+	//which port can reach which port in the semantics
 	ManyToMany<Integer, Integer> portConnections;
 
 	

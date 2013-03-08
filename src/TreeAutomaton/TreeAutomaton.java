@@ -22,7 +22,7 @@ public class TreeAutomaton{
 	private HashSet<Integer> states;
 	//Constructors
 	public TreeAutomaton(){
-		rank=new HashMap<Integer,Integer>();
+		rank=new HashMap<Integer,Integer>();//TODO should be static?
 		trans=new ManyToMany<Term, Integer>();	
 		states=new HashSet<Integer>();
 		addSubLabel(-1,0);//for ref to null
